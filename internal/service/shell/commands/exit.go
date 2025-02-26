@@ -1,4 +1,4 @@
-package exit
+package commands
 
 import (
 	"context"
@@ -13,7 +13,7 @@ type ExitCommand struct {
 }
 
 // New creates a new exit command
-func New(onExit func(int)) *ExitCommand {
+func NewExitCommand(onExit func(int)) *ExitCommand {
 	return &ExitCommand{onExit: onExit}
 }
 

@@ -1,4 +1,4 @@
-package ls
+package commands
 
 import (
 	"context"
@@ -16,7 +16,7 @@ type LSCommand struct {
 }
 
 // New creates a new ls command
-func New(sessionRepo shell.SessionRepository) *LSCommand {
+func NewLSCommand(sessionRepo shell.SessionRepository) *LSCommand {
 	return &LSCommand{
 		sessionRepo: sessionRepo,
 	}

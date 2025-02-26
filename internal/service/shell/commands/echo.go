@@ -1,4 +1,4 @@
-package echo
+package commands
 
 import (
 	"context"
@@ -14,7 +14,7 @@ type EchoCommand struct {
 }
 
 // New creates a new echo command
-func New(sessionRepo shell.SessionRepository) *EchoCommand {
+func NewEchoCommand(sessionRepo shell.SessionRepository) *EchoCommand {
 	return &EchoCommand{
 		sessionRepo: sessionRepo,
 	}

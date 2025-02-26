@@ -14,13 +14,7 @@ import (
 	"github.com/Ali-Farhadnia/goshell/internal/service/history"
 	historyRepository "github.com/Ali-Farhadnia/goshell/internal/service/history/repository"
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell"
-	"github.com/Ali-Farhadnia/goshell/internal/service/shell/commands/adduser"
-	"github.com/Ali-Farhadnia/goshell/internal/service/shell/commands/cat"
-	"github.com/Ali-Farhadnia/goshell/internal/service/shell/commands/cd"
-	"github.com/Ali-Farhadnia/goshell/internal/service/shell/commands/echo"
-	"github.com/Ali-Farhadnia/goshell/internal/service/shell/commands/exit"
-	historyCommand "github.com/Ali-Farhadnia/goshell/internal/service/shell/commands/history"
-	"github.com/Ali-Farhadnia/goshell/internal/service/shell/commands/ls"
+	"github.com/Ali-Farhadnia/goshell/internal/service/shell/commands"
 	sessionRepository "github.com/Ali-Farhadnia/goshell/internal/service/shell/repository"
 	"github.com/Ali-Farhadnia/goshell/internal/service/user"
 	userRepository "github.com/Ali-Farhadnia/goshell/internal/service/user/repository"
@@ -53,19 +47,19 @@ func New(cfg *config.Config) (*App, error) {
 	// register commands
 
 	// exit
-	shellSVC.RegisterCommand(exit.New(nil))
+	shellSVC.RegisterCommand(commands.NewExitCommand(nil))
 	// echo
-	shellSVC.RegisterCommand(echo.New(sessionRepo))
+	shellSVC.RegisterCommand(commands.NewEchoCommand(sessionRepo))
 	// cat
-	shellSVC.RegisterCommand(cat.New(sessionRepo))
+	shellSVC.RegisterCommand(commands.NewCatCommand(sessionRepo))
 	// adduser
-	shellSVC.RegisterCommand(adduser.New(userSVC))
+	shellSVC.RegisterCommand(commands.NewAddUserCommand(userSVC))
 	// ls
-	shellSVC.RegisterCommand(ls.New(sessionRepo))
+	shellSVC.RegisterCommand(commands.NewLSCommand(sessionRepo))
 	// cd
-	shellSVC.RegisterCommand(cd.New(sessionRepo))
+	shellSVC.RegisterCommand(commands.NewCDCommand(sessionRepo))
 	// history
-	shellSVC.RegisterCommand(historyCommand.New(historySVC, sessionRepo))
+	shellSVC.RegisterCommand(commands.NewHistoryCommand(historySVC, sessionRepo))
 
 	// create guest user
 	sessionRepo.SetSession(shell.Session{

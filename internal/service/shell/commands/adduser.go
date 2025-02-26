@@ -1,4 +1,4 @@
-package adduser
+package commands
 
 import (
 	"context"
@@ -13,7 +13,7 @@ type AddUserCommand struct {
 }
 
 // New creates a new adduser command
-func New(userSVC *user.Service) *AddUserCommand {
+func NewAddUserCommand(userSVC *user.Service) *AddUserCommand {
 	return &AddUserCommand{
 		userSVC: userSVC,
 	}

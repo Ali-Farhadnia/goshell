@@ -1,4 +1,4 @@
-package cd
+package commands
 
 import (
 	"context"
@@ -15,7 +15,7 @@ type CDCommand struct {
 }
 
 // New creates a new cd command
-func New(sessionRepo shell.SessionRepository) *CDCommand {
+func NewCDCommand(sessionRepo shell.SessionRepository) *CDCommand {
 	return &CDCommand{
 		sessionRepo: sessionRepo,
 	}

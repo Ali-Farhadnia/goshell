@@ -1,4 +1,4 @@
-package history
+package commands
 
 import (
 	"context"
@@ -17,7 +17,7 @@ type HistoryCommand struct {
 }
 
 // New creates a new history command
-func New(
+func NewHistoryCommand(
 	historySVC *history.Service,
 	sessionRepo shell.SessionRepository,
 ) *HistoryCommand {

@@ -1,4 +1,4 @@
-package cat
+package commands
 
 import (
 	"context"
@@ -15,7 +15,7 @@ type CatCommand struct {
 }
 
 // New creates a new cat command
-func New(sessionRepo shell.SessionRepository) *CatCommand {
+func NewCatCommand(sessionRepo shell.SessionRepository) *CatCommand {
 	return &CatCommand{
 		sessionRepo: sessionRepo,
 	}
