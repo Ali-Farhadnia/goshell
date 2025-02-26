@@ -55,7 +55,7 @@ func (s *Service) ExecuteCommand(ctx context.Context, cmdName string, args []str
 		return "", err
 	}
 
-	if len(args) > cmd.MaxArguments() {
+	if len(args) > cmd.MaxArguments() && cmd.MaxArguments() != -1 {
 		return "", fmt.Errorf("too many arguments")
 	}
 

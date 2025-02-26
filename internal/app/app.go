@@ -16,6 +16,7 @@ import (
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell"
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell/commands/adduser"
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell/commands/cd"
+	"github.com/Ali-Farhadnia/goshell/internal/service/shell/commands/echo"
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell/commands/exit"
 	historyCommand "github.com/Ali-Farhadnia/goshell/internal/service/shell/commands/history"
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell/commands/ls"
@@ -52,6 +53,8 @@ func New(cfg *config.Config) (*App, error) {
 
 	// exit
 	shellSVC.RegisterCommand(exit.New(nil))
+	// echo
+	shellSVC.RegisterCommand(echo.New(sessionRepo))
 	// adduser
 	shellSVC.RegisterCommand(adduser.New(userSVC))
 	// ls
