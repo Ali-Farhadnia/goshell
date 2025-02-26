@@ -27,6 +27,11 @@ func (l *LSCommand) Name() string {
 	return "ls"
 }
 
+// MaxArguments returns the maximum number of arguments allowed for the Command.
+func (c *LSCommand) MaxArguments() int {
+	return 1
+}
+
 // Execute runs the command
 func (l *LSCommand) Execute(ctx context.Context, args []string) (string, error) {
 	session, err := l.sessionRepo.GetSession()

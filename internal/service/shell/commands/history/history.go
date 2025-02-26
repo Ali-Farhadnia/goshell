@@ -32,6 +32,11 @@ func (c *HistoryCommand) Name() string {
 	return "history"
 }
 
+// MaxArguments returns the maximum number of arguments allowed for the Command.
+func (c *HistoryCommand) MaxArguments() int {
+	return 2
+}
+
 // Execute runs the command
 func (c *HistoryCommand) Execute(ctx context.Context, args []string) (string, error) {
 	session, err := c.sessionRepo.GetSession()

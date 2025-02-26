@@ -18,6 +18,9 @@ type Command interface {
 	// Name returns the command name
 	Name() string
 
+	// MaxArguments returns the maximum number of arguments allowed for the Command.
+	MaxArguments() int
+
 	// Execute runs the command with the given arguments
 	Execute(ctx context.Context, args []string) (string, error)
 
@@ -50,6 +53,10 @@ func (s *Service) ExecuteCommand(ctx context.Context, cmdName string, args []str
 	cmd, err := s.GetCommand(cmdName)
 	if err != nil {
 		return "", err
+	}
+
+	if len(args) > cmd.MaxArguments() {
+		return "", fmt.Errorf("too many arguments")
 	}
 
 	session, err := s.sessionRepo.GetSession()

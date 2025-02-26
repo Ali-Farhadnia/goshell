@@ -22,6 +22,11 @@ func (c *ExitCommand) Name() string {
 	return "exit"
 }
 
+// MaxArguments returns the maximum number of arguments allowed for the Command.
+func (c *ExitCommand) MaxArguments() int {
+	return 1
+}
+
 // Execute runs the command
 func (c *ExitCommand) Execute(ctx context.Context, args []string) (string, error) {
 	exitCode := 0 // Default exit code

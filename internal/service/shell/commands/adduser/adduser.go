@@ -24,6 +24,11 @@ func (c *AddUserCommand) Name() string {
 	return "adduser"
 }
 
+// MaxArguments returns the maximum number of arguments allowed for the Command.
+func (c *AddUserCommand) MaxArguments() int {
+	return 2
+}
+
 // Execute runs the command
 func (c *AddUserCommand) Execute(ctx context.Context, args []string) (string, error) {
 	if len(args) == 0 {

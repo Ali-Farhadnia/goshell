@@ -27,6 +27,11 @@ func (c *LoginCommand) Name() string {
 	return "login"
 }
 
+// MaxArguments returns the maximum number of arguments allowed for the Command.
+func (c *LoginCommand) MaxArguments() int {
+	return 2
+}
+
 // Execute runs the command
 func (c *LoginCommand) Execute(ctx context.Context, args []string) (string, error) {
 	if len(args) < 1 {

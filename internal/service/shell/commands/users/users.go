@@ -26,6 +26,11 @@ func (c *UsersCommand) Name() string {
 	return "users"
 }
 
+// MaxArguments returns the maximum number of arguments allowed for the Command.
+func (c *UsersCommand) MaxArguments() int {
+	return 0
+}
+
 // Execute runs the command
 func (c *UsersCommand) Execute(ctx context.Context, args []string) (string, error) {
 	users, err := c.userSVC.ListUsers()

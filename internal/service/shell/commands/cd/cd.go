@@ -26,6 +26,11 @@ func (c *CDCommand) Name() string {
 	return "cd"
 }
 
+// MaxArguments returns the maximum number of arguments allowed for the Command.
+func (c *CDCommand) MaxArguments() int {
+	return 1
+}
+
 // Execute runs the command
 func (c *CDCommand) Execute(ctx context.Context, args []string) (string, error) {
 	if len(args) == 0 {

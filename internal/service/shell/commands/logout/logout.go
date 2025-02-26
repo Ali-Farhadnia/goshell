@@ -23,6 +23,11 @@ func (c *LogoutCommand) Name() string {
 	return "logout"
 }
 
+// MaxArguments returns the maximum number of arguments allowed for the Command.
+func (c *LogoutCommand) MaxArguments() int {
+	return 0
+}
+
 // Execute runs the command
 func (c *LogoutCommand) Execute(ctx context.Context, args []string) (string, error) {
 	session, err := c.sessionRepo.GetSession()
