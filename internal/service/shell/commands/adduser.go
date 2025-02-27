@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/Ali-Farhadnia/goshell/internal/service/user"
 )
@@ -30,19 +31,27 @@ func (c *AddUserCommand) MaxArguments() int {
 }
 
 // Execute runs the command
-func (c *AddUserCommand) Execute(ctx context.Context, args []string) (string, error) {
+func (c *AddUserCommand) Execute(ctx context.Context, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	if len(args) == 0 {
-		return "", fmt.Errorf("usage: adduser <username>")
+		_, err := fmt.Fprintf(errorOutputWriter, "usage: adduser <username>\n")
+		return err
 	}
 
 	// todo: add password
 	username := args[0]
 	user, err := c.userSVC.CreateUser(username)
 	if err != nil {
-		return "", err
+		_, err = fmt.Fprintf(errorOutputWriter, "error creating user: %v\n", err)
+		return err
 	}
 
-	return fmt.Sprintf("User added: %s\n", user.Username), nil
+	_, err = fmt.Fprintf(outputWriter, "User added: %s\n", user.Username)
+	if err != nil {
+		_, err = fmt.Fprintf(errorOutputWriter, "error writing output: %v\n", err)
+		return err
+	}
+
+	return nil
 }
 
 // Help returns the help text

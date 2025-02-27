@@ -1,23 +1,21 @@
 package commands
 
 import (
+	"bufio"
 	"context"
+	"fmt"
+	"io"
 	"os"
 	"strings"
-
-	"github.com/Ali-Farhadnia/goshell/internal/service/shell"
 )
 
 // EchoCommand implements the echo command
 type EchoCommand struct {
-	sessionRepo shell.SessionRepository
 }
 
 // New creates a new echo command
-func NewEchoCommand(sessionRepo shell.SessionRepository) *EchoCommand {
-	return &EchoCommand{
-		sessionRepo: sessionRepo,
-	}
+func NewEchoCommand() *EchoCommand {
+	return &EchoCommand{}
 }
 
 // Name returns the command name
@@ -31,45 +29,99 @@ func (e *EchoCommand) MaxArguments() int {
 }
 
 // Execute runs the command
-func (e *EchoCommand) Execute(ctx context.Context, args []string) (string, error) {
+func (e *EchoCommand) Execute(ctx context.Context, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	var output strings.Builder
 
-	for _, arg := range args {
-		if strings.HasPrefix(arg, "'") && strings.HasSuffix(arg, "'") {
-			// Literal string, remove quotes
-			output.WriteString(strings.Trim(arg, "'"))
-		} else {
-			// Handle environment variables and other strings
-			var expandedArg strings.Builder
-			var inEnvVar bool
-			var envVarName strings.Builder
+	// If no arguments are provided, read from inputReader
+	if len(args) == 0 {
+		scanner := bufio.NewScanner(inputReader)
+		for scanner.Scan() {
+			_, err := output.WriteString(scanner.Text())
+			if err != nil {
+				return err
+			}
 
-			for _, char := range arg {
-				if char == '$' && !inEnvVar {
-					inEnvVar = true
-					envVarName.Reset()
-				} else if inEnvVar && (('a' <= char && char <= 'z') || ('A' <= char && char <= 'Z') || ('0' <= char && char <= '9') || char == '_') {
-					envVarName.WriteRune(char)
-				} else if inEnvVar {
-					envVar := os.Getenv(envVarName.String())
-					expandedArg.WriteString(envVar)
-					expandedArg.WriteRune(char)
-					inEnvVar = false
-					envVarName.Reset()
-				} else {
-					expandedArg.WriteRune(char)
+			_, err = output.WriteString("\n")
+			if err != nil {
+				return err
+			}
+		}
+		if err := scanner.Err(); err != nil {
+			_, err = fmt.Fprintf(errorOutputWriter, "error reading input: %v\n", err)
+			return err
+		}
+	} else {
+		// Process arguments as before
+		for _, arg := range args {
+			if strings.HasPrefix(arg, "'") && strings.HasSuffix(arg, "'") {
+				_, err := output.WriteString(strings.Trim(arg, "'"))
+				if err != nil {
+					return err
+				}
+
+			} else {
+				var expandedArg strings.Builder
+				var inEnvVar bool
+				var envVarName strings.Builder
+
+				for _, char := range arg {
+					if char == '$' && !inEnvVar {
+						inEnvVar = true
+						envVarName.Reset()
+					} else if inEnvVar && (('a' <= char && char <= 'z') || ('A' <= char && char <= 'Z') || ('0' <= char && char <= '9') || char == '_') {
+						_, err := envVarName.WriteRune(char)
+						if err != nil {
+							return err
+						}
+
+					} else if inEnvVar {
+						envVar := os.Getenv(envVarName.String())
+						_, err := expandedArg.WriteString(envVar)
+						if err != nil {
+							return err
+						}
+
+						_, err = expandedArg.WriteRune(char)
+						if err != nil {
+							return err
+						}
+
+						inEnvVar = false
+						envVarName.Reset()
+					} else {
+						_, err := expandedArg.WriteRune(char)
+						if err != nil {
+							return err
+						}
+					}
+				}
+				if inEnvVar {
+					_, err := expandedArg.WriteString(os.Getenv(envVarName.String()))
+					if err != nil {
+						return err
+					}
+				}
+
+				_, err := output.WriteString(expandedArg.String())
+				if err != nil {
+					return err
 				}
 			}
-			if inEnvVar {
-				expandedArg.WriteString(os.Getenv(envVarName.String()))
-			}
 
-			output.WriteString(expandedArg.String())
+			_, err := output.WriteString(" ")
+			if err != nil {
+				return err
+			}
 		}
-		output.WriteString(" ")
 	}
 
-	return strings.TrimSpace(output.String()), nil
+	_, err := fmt.Fprintln(outputWriter, strings.TrimSpace(output.String()))
+	if err != nil {
+		_, err := fmt.Fprintf(errorOutputWriter, "error writing output: %v\n", err)
+		return err
+	}
+
+	return nil
 }
 
 // Help returns the help text

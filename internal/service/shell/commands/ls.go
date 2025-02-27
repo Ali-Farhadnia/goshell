@@ -2,6 +2,8 @@ package commands
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -33,10 +35,11 @@ func (c *LSCommand) MaxArguments() int {
 }
 
 // Execute runs the command
-func (l *LSCommand) Execute(ctx context.Context, args []string) (string, error) {
+func (l *LSCommand) Execute(ctx context.Context, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	session, err := l.sessionRepo.GetSession()
 	if err != nil {
-		return "", err
+		_, err := fmt.Fprintf(errorOutputWriter, "session error: %v\n", err)
+		return err
 	}
 
 	dirPath := session.WorkingDir
@@ -46,7 +49,8 @@ func (l *LSCommand) Execute(ctx context.Context, args []string) (string, error) 
 
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
-		return "", err
+		_, err := fmt.Fprintf(errorOutputWriter, "dir error: %v\n", err)
+		return err
 	}
 
 	var output []string
@@ -59,8 +63,13 @@ func (l *LSCommand) Execute(ctx context.Context, args []string) (string, error) 
 	}
 
 	sort.Strings(output)
+	_, err = fmt.Fprintf(outputWriter, "%s\n", strings.Join(output, "\n"))
+	if err != nil {
+		_, err := fmt.Fprintf(errorOutputWriter, "error writing output: %v\n", err)
+		return err
+	}
 
-	return strings.Join(output, "\n"), nil
+	return nil
 }
 
 // Help returns the help text

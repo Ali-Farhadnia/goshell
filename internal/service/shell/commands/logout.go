@@ -2,6 +2,8 @@ package commands
 
 import (
 	"context"
+	"fmt"
+	"io"
 
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell"
 )
@@ -29,20 +31,28 @@ func (c *LogoutCommand) MaxArguments() int {
 }
 
 // Execute runs the command
-func (c *LogoutCommand) Execute(ctx context.Context, args []string) (string, error) {
+func (c *LogoutCommand) Execute(ctx context.Context, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	session, err := c.sessionRepo.GetSession()
 	if err != nil {
-		return "", err
+		_, err = fmt.Fprintf(errorOutputWriter, "session error: %v\n", err)
+		return err
 	}
 
 	session.User = nil
 
 	err = c.sessionRepo.SetSession(session)
 	if err != nil {
-		return "", err
+		_, err = fmt.Fprintf(errorOutputWriter, "session save error: %v\n", err)
+		return err
 	}
 
-	return "Logged out.", nil
+	_, err = fmt.Fprintf(outputWriter, "Logged out.\n")
+	if err != nil {
+		_, err := fmt.Fprintf(errorOutputWriter, "error writing output: %v\n", err)
+		return err
+	}
+
+	return nil
 }
 
 // Help returns the help text

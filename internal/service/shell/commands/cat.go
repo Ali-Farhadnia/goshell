@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -32,14 +33,16 @@ func (c *CatCommand) MaxArguments() int {
 }
 
 // Execute runs the command
-func (c *CatCommand) Execute(ctx context.Context, args []string) (string, error) {
+func (c *CatCommand) Execute(ctx context.Context, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	if len(args) == 0 {
-		return "", fmt.Errorf("usage: cat <filename>")
+		_, err := fmt.Fprintf(errorOutputWriter, "usage: cat <filename>\n")
+		return err
 	}
 
 	session, err := c.sessionRepo.GetSession()
 	if err != nil {
-		return "", err
+		_, err = fmt.Fprintf(errorOutputWriter, "error getting session: %v\n", err)
+		return err
 	}
 
 	filePath := args[0]
@@ -49,10 +52,17 @@ func (c *CatCommand) Execute(ctx context.Context, args []string) (string, error)
 
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		return "", err
+		_, err = fmt.Fprintf(errorOutputWriter, "error reading file: %v\n", err)
+		return err
 	}
 
-	return string(data), nil
+	_, err = fmt.Fprintf(outputWriter, "%s", string(data))
+	if err != nil {
+		_, err = fmt.Fprintf(errorOutputWriter, "error writing output: %v\n", err)
+		return err
+	}
+
+	return nil
 }
 
 // Help returns the help text

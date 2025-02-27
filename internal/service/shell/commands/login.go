@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell"
 	"github.com/Ali-Farhadnia/goshell/internal/service/user"
@@ -33,30 +34,40 @@ func (c *LoginCommand) MaxArguments() int {
 }
 
 // Execute runs the command
-func (c *LoginCommand) Execute(ctx context.Context, args []string) (string, error) {
+func (c *LoginCommand) Execute(ctx context.Context, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	if len(args) < 1 {
-		return "", fmt.Errorf("usage: login <username>")
+		_, err := fmt.Fprintf(errorOutputWriter, "usage: login <username>\n")
+		return err
 	}
 
 	username := args[0]
 	user, err := c.userSVC.LoginUser(username)
 	if err != nil {
-		return "", err
+		_, err = fmt.Fprintf(errorOutputWriter, "login failed: %v\n", err)
+		return err
 	}
 
 	session, err := c.sessionRepo.GetSession()
 	if err != nil {
-		return "", err
+		_, err = fmt.Fprintf(errorOutputWriter, "session error: %v\n", err)
+		return err
 	}
 
 	session.User = user
 
 	err = c.sessionRepo.SetSession(session)
 	if err != nil {
-		return "", err
+		_, err = fmt.Fprintf(errorOutputWriter, "session save error: %v\n", err)
+		return err
 	}
 
-	return fmt.Sprintf("Logged in as: %s\n", user.Username), nil
+	_, err = fmt.Fprintf(outputWriter, "Logged in as: %s\n", user.Username)
+	if err != nil {
+		_, err := fmt.Fprintf(errorOutputWriter, "error writing output: %v\n", err)
+		return err
+	}
+
+	return nil
 }
 
 // Help returns the help text

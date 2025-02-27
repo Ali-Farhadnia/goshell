@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -32,24 +33,43 @@ func (c *UsersCommand) MaxArguments() int {
 }
 
 // Execute runs the command
-func (c *UsersCommand) Execute(ctx context.Context, args []string) (string, error) {
+func (c *UsersCommand) Execute(ctx context.Context, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	users, err := c.userSVC.ListUsers()
 	if err != nil {
-		return "", err
+		_, err = fmt.Fprintf(errorOutputWriter, "%v\n", err)
+		return err
 	}
 
 	var result strings.Builder
-	result.WriteString("Registered users:\n")
-	result.WriteString("----------------\n")
+	_, err = result.WriteString("Registered users:\n")
+	if err != nil {
+		return err
+	}
+
+	_, err = result.WriteString("----------------\n")
+	if err != nil {
+		return err
+	}
+
 	for _, user := range users {
 		lastLogin := "Never"
 		if user.LastLogin != nil {
 			lastLogin = user.LastLogin.Format(time.RFC822)
 		}
-		result.WriteString(fmt.Sprintf("%-15s Last login: %s\n", user.Username, lastLogin))
+
+		_, err = result.WriteString(fmt.Sprintf("%-15s Last login: %s\n", user.Username, lastLogin))
+		if err != nil {
+			return err
+		}
 	}
 
-	return result.String(), nil
+	_, err = fmt.Fprintf(outputWriter, "%s", result.String())
+	if err != nil {
+		_, err = fmt.Fprintf(errorOutputWriter, "error writing output: %v\n", err)
+		return err
+	}
+
+	return nil
 }
 
 // Help returns the help text

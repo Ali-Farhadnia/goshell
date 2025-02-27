@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -32,35 +33,40 @@ func (c *CDCommand) MaxArguments() int {
 }
 
 // Execute runs the command
-func (c *CDCommand) Execute(ctx context.Context, args []string) (string, error) {
+func (c *CDCommand) Execute(ctx context.Context, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	if len(args) == 0 {
-		return "", fmt.Errorf("usage: cd <dir>")
+		_, err := fmt.Fprintf(errorOutputWriter, "usage: cd <dir>\n")
+		return err
 	}
 
 	session, err := c.sessionRepo.GetSession()
 	if err != nil {
-		return "", err
+		_, err = fmt.Fprintf(errorOutputWriter, "error getting session: %v\n", err)
+		return err
 	}
 
 	newPath := filepath.Join(session.WorkingDir, args[0])
 
 	info, err := os.Stat(newPath)
 	if err != nil {
-		return "", err
+		_, err = fmt.Fprintf(errorOutputWriter, "error accessing path: %v\n", err)
+		return err
 	}
 
 	if !info.IsDir() {
-		return "", fmt.Errorf("not a directory")
+		_, err = fmt.Fprintf(errorOutputWriter, "not a directory\n")
+		return err
 	}
 
 	session.WorkingDir = newPath
 
 	err = c.sessionRepo.SetSession(session)
 	if err != nil {
-		return "", err
+		_, err = fmt.Fprintf(errorOutputWriter, "error updating session: %v\n", err)
+		return err
 	}
 
-	return "", nil
+	return nil
 }
 
 // Help returns the help text

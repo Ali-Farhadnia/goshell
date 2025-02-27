@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell"
 )
@@ -30,17 +31,26 @@ func (c *PWDCommand) MaxArguments() int {
 }
 
 // Execute runs the command
-func (c *PWDCommand) Execute(ctx context.Context, args []string) (string, error) {
-	if len(args) > 0 {
-		return "", fmt.Errorf("pwd: too many arguments")
-	}
-
+func (c *PWDCommand) Execute(ctx context.Context, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	session, err := c.sessionRepo.GetSession()
 	if err != nil {
-		return "", err
+		_, err := fmt.Fprintf(errorOutputWriter, "session error: %v\n", err)
+		return err
 	}
 
-	return session.WorkingDir, nil
+	dirPath := session.WorkingDir
+	if len(args) > 0 {
+		_, err := fmt.Fprintf(errorOutputWriter, "pwd: too many arguments\n")
+		return err
+	}
+
+	_, err = fmt.Fprintf(outputWriter, "%s\n", dirPath)
+	if err != nil {
+		_, err := fmt.Fprintf(errorOutputWriter, "error writing output: %v\n", err)
+		return err
+	}
+
+	return nil
 }
 
 // Help returns the help text

@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 )
@@ -28,13 +29,14 @@ func (c *ExitCommand) MaxArguments() int {
 }
 
 // Execute runs the command
-func (c *ExitCommand) Execute(ctx context.Context, args []string) (string, error) {
+func (c *ExitCommand) Execute(ctx context.Context, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	exitCode := 0 // Default exit code
 
 	if len(args) > 0 {
 		code, err := strconv.Atoi(args[0])
 		if err != nil {
-			return "Invalid exit code: " + args[0], err
+			_, err = fmt.Fprintf(errorOutputWriter, "Invalid exit code: %s\n", args[0])
+			return err
 		}
 		exitCode = code
 	}
@@ -43,11 +45,15 @@ func (c *ExitCommand) Execute(ctx context.Context, args []string) (string, error
 		c.onExit(exitCode)
 	}
 
-	fmt.Printf("exit status %d\n", exitCode)
+	_, err := fmt.Fprintf(outputWriter, "exit status %d\n", exitCode)
+	if err != nil {
+		_, err = fmt.Fprintf(errorOutputWriter, "error writing output: %v\n", err)
+		return err
+	}
 
 	os.Exit(exitCode)
 
-	return "", nil
+	return nil
 }
 
 // Help returns the help text

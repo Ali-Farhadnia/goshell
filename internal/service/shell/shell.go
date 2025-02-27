@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/Ali-Farhadnia/goshell/internal/service/history"
@@ -34,7 +35,7 @@ type Command interface {
 	MaxArguments() int
 
 	// Execute runs the command with the given arguments
-	Execute(ctx context.Context, args []string) (string, error)
+	Execute(ctx context.Context, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error
 
 	// Help returns the help text for the command
 	Help() string
@@ -66,71 +67,83 @@ func (s *Service) RegisterCommand(cmd Command) error {
 }
 
 // ExecuteCommand determines if a command is built-in or system-based and executes it.
-func (s *Service) ExecuteCommand(ctx context.Context, cmdName string, args []string) (string, error) {
+func (s *Service) ExecuteCommand(ctx context.Context, cmdName string, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	// Check built-in command
 	cmd, err := s.commandRepo.Get(cmdName)
 	if err != nil {
 		// If error is not "command not found", return immediately
 		if !errors.Is(err, ErrCommandNotFound) {
-			return "", err
+			return err
 		}
 
 		// Check if it's a system command
 		if _, err := execpath.FindExecutable(cmdName); err != nil {
-			return "", err
+			return err
 		}
 
-		return s.executeSystemCommand(ctx, cmdName, args)
+		return s.executeSystemCommand(ctx, cmdName, args, inputReader, outputWriter, errorOutputWriter)
 	}
 
-	return s.executeBuiltinCommand(ctx, cmd, args)
+	return s.executeBuiltinCommand(ctx, cmd, args, inputReader, outputWriter, errorOutputWriter)
 }
 
 // executeBuiltinCommand runs a built-in command after performing necessary checks.
-func (s *Service) executeBuiltinCommand(ctx context.Context, cmd Command, args []string) (string, error) {
+func (s *Service) executeBuiltinCommand(ctx context.Context, cmd Command, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	// Handle help flag
 	if isHelpRequested(args) {
-		return cmd.Help(), nil
+		_, err := fmt.Fprintf(outputWriter, "%s", cmd.Help())
+		if err != nil {
+			_, err = fmt.Fprintf(errorOutputWriter, "error writing output: %v\n", err)
+			return err
+		}
+
+		return nil
 	}
 
 	// Validate argument count
 	if err := validateArgs(cmd, args); err != nil {
-		return "", err
+		return err
 	}
 
 	// Get user ID
 	userID, err := s.getUserID()
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	// Save command to history
 	if err := s.saveCommandHistory(userID, cmd.Name(), args); err != nil {
-		return "", err
+		return err
 	}
 
-	return cmd.Execute(ctx, args)
+	return cmd.Execute(ctx, args, inputReader, outputWriter, errorOutputWriter)
 }
 
 // executeSystemCommand runs a system command.
-func (s *Service) executeSystemCommand(ctx context.Context, cmdName string, args []string) (string, error) {
+func (s *Service) executeSystemCommand(ctx context.Context, cmdName string, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	// Handle help flag
 	if isHelpRequested(args) {
-		return s.systemCommand.Help(), nil
+		_, err := fmt.Fprintf(outputWriter, "%s", s.systemCommand.Help())
+		if err != nil {
+			_, err = fmt.Fprintf(errorOutputWriter, "error writing output: %v\n", err)
+			return err
+		}
+
+		return nil
 	}
 
-	// Retrieve session and user ID
+	// Get user ID
 	userID, err := s.getUserID()
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	// Save command to history
 	if err := s.saveCommandHistory(userID, cmdName, args); err != nil {
-		return "", err
+		return err
 	}
 
-	return s.systemCommand.Execute(ctx, cmdName, args)
+	return s.systemCommand.Execute(ctx, cmdName, args, inputReader, outputWriter, errorOutputWriter)
 }
 
 // Helper function to check if help is requested

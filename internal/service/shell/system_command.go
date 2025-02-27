@@ -1,11 +1,11 @@
 package shell
 
 import (
-	"bytes"
 	"context"
+	"fmt"
+	"io"
 	"os"
 	"os/exec"
-	"strings"
 
 	"github.com/Ali-Farhadnia/goshell/pkg/execpath"
 )
@@ -23,17 +23,19 @@ func NewSystemCommand(sessionRepo SessionRepository) *SystemCommand {
 }
 
 // Execute runs the system command
-func (c *SystemCommand) Execute(ctx context.Context, cmdName string, args []string) (string, error) {
+func (c *SystemCommand) Execute(ctx context.Context, cmdName string, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	// Check if it's an executable in $PATH
 	cmdPath, err := execpath.FindExecutable(cmdName)
 	if err != nil {
-		return "", err
+		_, err := fmt.Fprintf(errorOutputWriter, "command not found: %s\n", cmdName)
+		return err
 	}
 
 	// Get the current working directory from session
 	session, err := c.sessionRepo.GetSession()
 	if err != nil {
-		return "", err
+		_, err := fmt.Fprintf(errorOutputWriter, "error getting session: %v\n", err)
+		return err
 	}
 
 	// Prepare command execution
@@ -41,18 +43,19 @@ func (c *SystemCommand) Execute(ctx context.Context, cmdName string, args []stri
 	cmd.Dir = session.WorkingDir
 	cmd.Env = os.Environ()
 
-	// Capture output
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	// Set up input, output, and error streams
+	cmd.Stdin = inputReader
+	cmd.Stdout = outputWriter
+	cmd.Stderr = errorOutputWriter
 
 	// Execute command
 	err = cmd.Run()
 	if err != nil {
-		return stderr.String(), err
+		_, err := fmt.Fprintf(errorOutputWriter, "command execution failed: %v\n", err)
+		return err
 	}
 
-	return strings.TrimSpace(stdout.String()), nil
+	return nil
 }
 
 // Help returns the help text

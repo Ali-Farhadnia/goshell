@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell"
 	"github.com/Ali-Farhadnia/goshell/pkg/execpath"
@@ -24,25 +25,35 @@ func (t *TypeCommand) MaxArguments() int {
 	return 1
 }
 
-func (t *TypeCommand) Execute(ctx context.Context, args []string) (string, error) {
+// Execute runs the command
+func (t *TypeCommand) Execute(ctx context.Context, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	if len(args) == 0 {
-		return "", fmt.Errorf("usage: type <command>")
+		_, err := fmt.Fprintf(errorOutputWriter, "usage: type <command>\n")
+		return err
 	}
 
 	cmdName := args[0]
 
 	// Check if it's a shell builtin
 	if _, err := t.cmdRepo.Get(cmdName); err == nil {
-		return fmt.Sprintf("%s is a shell builtin", cmdName), nil
+		_, err = fmt.Fprintf(outputWriter, "%s is a shell builtin\n", cmdName)
+		return err
 	}
 
 	// Check if it's an executable in $PATH
 	cmdPath, err := execpath.FindExecutable(cmdName)
 	if err != nil {
-		return "", err
+		_, err = fmt.Fprintf(errorOutputWriter, "%v\n", err)
+		return err
 	}
 
-	return fmt.Sprintf("%s is %s", cmdName, cmdPath), nil
+	_, err = fmt.Fprintf(outputWriter, "%s is %s\n", cmdName, cmdPath)
+	if err != nil {
+		_, err = fmt.Fprintf(errorOutputWriter, "error writing output: %v\n", err)
+		return err
+	}
+
+	return nil
 }
 
 func (t *TypeCommand) Help() string {
