@@ -15,7 +15,7 @@ import (
 	historyRepository "github.com/Ali-Farhadnia/goshell/internal/service/history/repository"
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell"
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell/commands"
-	sessionRepository "github.com/Ali-Farhadnia/goshell/internal/service/shell/repository"
+	shellRepository "github.com/Ali-Farhadnia/goshell/internal/service/shell/repository"
 	"github.com/Ali-Farhadnia/goshell/internal/service/user"
 	userRepository "github.com/Ali-Farhadnia/goshell/internal/service/user/repository"
 )
@@ -36,13 +36,14 @@ func New(cfg *config.Config) (*App, error) {
 
 	// Initialize repository and service
 	usrRepo := userRepository.New(db)
-	sessionRepo := sessionRepository.NewSessionRepository()
+	sessionRepo := shellRepository.NewSessionRepository()
 	historyRepo := historyRepository.New(db)
 	guestHisotryCache := historyRepository.NewInMemory()
+	commandRepo := shellRepository.NewInMemoryCommandRepository()
 
 	userSVC := user.New(usrRepo)
 	historySVC := history.New(historyRepo, guestHisotryCache, -1)
-	shellSVC := shell.NewService(historySVC, sessionRepo)
+	shellSVC := shell.NewService(historySVC, sessionRepo, commandRepo)
 
 	// register commands
 

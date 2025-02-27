@@ -13,6 +13,12 @@ type SessionRepository interface {
 	SetSession(s Session) error
 }
 
+type CommandRepository interface {
+	Register(cmd Command) error
+	Get(name string) (Command, error)
+	List() ([]Command, error)
+}
+
 // Command defines the interface for all shell commands
 type Command interface {
 	// Name returns the command name
@@ -29,24 +35,26 @@ type Command interface {
 }
 
 type Service struct {
-	commands    map[string]Command
 	historySVC  *history.Service
 	sessionRepo SessionRepository
+	commandRepo CommandRepository
 }
 
 func NewService(
 	historySVC *history.Service,
 	sessionRepo SessionRepository,
+	commandRepo CommandRepository,
 ) *Service {
 	return &Service{
-		commands:    make(map[string]Command),
 		historySVC:  historySVC,
 		sessionRepo: sessionRepo,
+		commandRepo: commandRepo,
 	}
 }
 
-func (s *Service) RegisterCommand(cmd Command) {
-	s.commands[cmd.Name()] = cmd
+func (s *Service) RegisterCommand(cmd Command) error {
+	return s.commandRepo.Register(cmd)
+
 }
 
 func (s *Service) ExecuteCommand(ctx context.Context, cmdName string, args []string) (string, error) {
@@ -56,7 +64,7 @@ func (s *Service) ExecuteCommand(ctx context.Context, cmdName string, args []str
 	}
 
 	if len(args) > cmd.MaxArguments() && cmd.MaxArguments() != -1 {
-		return "", fmt.Errorf("too many arguments")
+		return "", fmt.Errorf("too many arguments for command '%s'", cmdName)
 	}
 
 	session, err := s.sessionRepo.GetSession()
@@ -69,36 +77,41 @@ func (s *Service) ExecuteCommand(ctx context.Context, cmdName string, args []str
 		userID = &session.User.ID
 	}
 
-	err = s.historySVC.SaveCommandHistory(userID, fmt.Sprintf("%s %s", cmdName, strings.Join(args, " ")))
+	history := fmt.Sprintf("%s %s", cmdName, strings.Join(args, " "))
+	err = s.historySVC.SaveCommandHistory(userID, history)
 	if err != nil {
 		return "", err
 	}
 
-	// help command
-	if len(args) > 0 && args[0] == "--help" {
+	switch {
+	case len(args) > 0 && args[0] == "--help":
 		return cmd.Help(), nil
+	default:
+		result, err := cmd.Execute(ctx, args)
+		if err != nil {
+			return "", err
+		}
+		return result, nil
 	}
-
-	result, err := cmd.Execute(ctx, args)
-	if err != nil {
-		return "", err
-	}
-
-	return result, nil
 }
 
 func (s *Service) GetCommand(name string) (Command, error) {
-	cmd, ok := s.commands[name]
-	if !ok {
-		return nil, fmt.Errorf("command '%s' not found", name)
+	cmd, err := s.commandRepo.Get(name)
+	if err != nil {
+		return nil, err
 	}
 
 	return cmd, nil
 }
 
 func (s *Service) Help() (string, error) {
+	commands, err := s.commandRepo.List()
+	if err != nil {
+		return "", err
+	}
+
 	var result strings.Builder
-	for _, cmd := range s.commands {
+	for _, cmd := range commands {
 		result.WriteString(fmt.Sprintf("%s\n", cmd.Help()))
 	}
 
