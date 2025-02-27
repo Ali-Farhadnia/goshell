@@ -43,7 +43,7 @@ func New(cfg *config.Config) (*App, error) {
 
 	userSVC := user.New(usrRepo)
 	historySVC := history.New(historyRepo, guestHisotryCache, -1)
-	shellSVC := shell.NewService(historySVC, sessionRepo, cmdRepo)
+	shellSVC := shell.NewService(historySVC, sessionRepo, cmdRepo, shell.NewSystemCommand(sessionRepo))
 
 	// register commands
 

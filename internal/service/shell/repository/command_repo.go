@@ -43,8 +43,9 @@ func (r *InMemoryCommandRepository) Get(name string) (shell.Command, error) {
 
 	cmd, exists := r.commands[name]
 	if !exists {
-		return nil, errors.New("command not found: " + name)
+		return nil, shell.ErrCommandNotFound
 	}
+
 	return cmd, nil
 }
 
