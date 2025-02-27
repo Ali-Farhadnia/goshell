@@ -3,11 +3,9 @@ package commands
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell"
+	"github.com/Ali-Farhadnia/goshell/pkg/execpath"
 )
 
 type TypeCommand struct {
@@ -39,17 +37,12 @@ func (t *TypeCommand) Execute(ctx context.Context, args []string) (string, error
 	}
 
 	// Check if it's an executable in $PATH
-	pathEnv := os.Getenv("PATH")
-	paths := strings.Split(pathEnv, ":")
-
-	for _, dir := range paths {
-		cmdPath := filepath.Join(dir, cmdName)
-		if fileInfo, err := os.Stat(cmdPath); err == nil && !fileInfo.IsDir() {
-			return fmt.Sprintf("%s is %s", cmdName, cmdPath), nil
-		}
+	cmdPath, err := execpath.FindExecutable(cmdName)
+	if err != nil {
+		return "", err
 	}
 
-	return fmt.Sprintf("%s: not found", cmdName), nil
+	return fmt.Sprintf("%s is %s", cmdName, cmdPath), nil
 }
 
 func (t *TypeCommand) Help() string {
