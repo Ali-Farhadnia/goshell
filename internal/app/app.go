@@ -55,6 +55,8 @@ func New(cfg *config.Config) (*App, error) {
 	shellSVC.RegisterCommand(commands.NewCatCommand(sessionRepo))
 	// type
 	shellSVC.RegisterCommand(commands.NewTypeCommand(cmdRepo))
+	// pwd
+	shellSVC.RegisterCommand(commands.NewPWDCommand(sessionRepo))
 	// adduser
 	shellSVC.RegisterCommand(commands.NewAddUserCommand(userSVC))
 	// ls
