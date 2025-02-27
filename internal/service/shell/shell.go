@@ -103,17 +103,3 @@ func (s *Service) GetCommand(name string) (Command, error) {
 
 	return cmd, nil
 }
-
-func (s *Service) Help() (string, error) {
-	commands, err := s.commandRepo.List()
-	if err != nil {
-		return "", err
-	}
-
-	var result strings.Builder
-	for _, cmd := range commands {
-		result.WriteString(fmt.Sprintf("%s\n", cmd.Help()))
-	}
-
-	return result.String(), nil
-}

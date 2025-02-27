@@ -63,6 +63,8 @@ func New(cfg *config.Config) (*App, error) {
 	shellSVC.RegisterCommand(commands.NewCDCommand(sessionRepo))
 	// history
 	shellSVC.RegisterCommand(commands.NewHistoryCommand(historySVC, sessionRepo))
+	// help
+	shellSVC.RegisterCommand(commands.NewHelpCommand(cmdRepo))
 
 	// create guest user
 	sessionRepo.SetSession(shell.Session{
@@ -108,16 +110,7 @@ func (a *App) Run() error {
 		}
 
 		commandName, commandArgs := args[0], args[1:]
-
-		var result string
-
-		switch commandName {
-		case "help":
-			result, err = a.shellSVC.Help()
-		default:
-			result, err = a.shellSVC.ExecuteCommand(ctx, commandName, commandArgs)
-		}
-
+		result, err := a.shellSVC.ExecuteCommand(ctx, commandName, commandArgs)
 		if err != nil {
 			fmt.Println("error:", err)
 		}
