@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/Ali-Farhadnia/goshell/internal/service/history"
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell"
@@ -74,7 +75,6 @@ func (c *HistoryCommand) Execute(ctx context.Context, args []string) (string, er
 		}
 	}
 
-	// Default: show all history
 	return c.showHistory(0)
 }
 
@@ -96,21 +96,16 @@ func (c *HistoryCommand) showHistory(limit int) (string, error) {
 	}
 
 	var result strings.Builder
-	result.WriteString("Command history:\n")
-	result.WriteString("----------------\n")
+	w := tabwriter.NewWriter(&result, 0, 0, 3, ' ', 0) // Adjust spacing here
 
-	// Find the maximum command length
-	maxCommandLength := 0
+	fmt.Fprintln(w, "Command\tCount")
+	fmt.Fprintln(w, "---\t---")
+
 	for _, stat := range historyStats {
-		if len(stat.Command) > maxCommandLength {
-			maxCommandLength = len(stat.Command)
-		}
+		fmt.Fprintf(w, "%s\t%d\n", stat.Command, stat.Count)
 	}
 
-	// Format the output with padding
-	for _, stat := range historyStats {
-		result.WriteString(fmt.Sprintf("%-*s  ->  %d\n", maxCommandLength, stat.Command, stat.Count))
-	}
+	w.Flush()
 
 	return result.String(), nil
 }
