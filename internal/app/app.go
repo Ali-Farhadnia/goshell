@@ -39,11 +39,11 @@ func New(cfg *config.Config) (*App, error) {
 	sessionRepo := shellRepository.NewSessionRepository()
 	historyRepo := historyRepository.New(db)
 	guestHisotryCache := historyRepository.NewInMemory()
-	commandRepo := shellRepository.NewInMemoryCommandRepository()
+	cmdRepo := shellRepository.NewInMemoryCommandRepository()
 
 	userSVC := user.New(usrRepo)
 	historySVC := history.New(historyRepo, guestHisotryCache, -1)
-	shellSVC := shell.NewService(historySVC, sessionRepo, commandRepo)
+	shellSVC := shell.NewService(historySVC, sessionRepo, cmdRepo)
 
 	// register commands
 
@@ -53,6 +53,8 @@ func New(cfg *config.Config) (*App, error) {
 	shellSVC.RegisterCommand(commands.NewEchoCommand(sessionRepo))
 	// cat
 	shellSVC.RegisterCommand(commands.NewCatCommand(sessionRepo))
+	// type
+	shellSVC.RegisterCommand(commands.NewTypeCommand(cmdRepo))
 	// adduser
 	shellSVC.RegisterCommand(commands.NewAddUserCommand(userSVC))
 	// ls
