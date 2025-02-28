@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"io"
 	"testing"
 
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell"
@@ -12,27 +11,6 @@ import (
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell/repository"
 	"github.com/stretchr/testify/assert"
 )
-
-type MockCommand struct {
-	NameVal string
-	HelpVal string
-}
-
-func (m *MockCommand) Name() string {
-	return m.NameVal
-}
-
-func (m *MockCommand) Help() string {
-	return m.HelpVal
-}
-
-func (m *MockCommand) MaxArguments() int {
-	return 0
-}
-
-func (m *MockCommand) Execute(ctx context.Context, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
-	return nil
-}
 
 func TestHelpCommand_Execute(t *testing.T) {
 	ctx := context.Background()
