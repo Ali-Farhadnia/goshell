@@ -56,7 +56,7 @@ func (c *CatCommand) Execute(ctx context.Context, args []string, inputReader io.
 		return err
 	}
 
-	_, err = fmt.Fprintf(outputWriter, "%s", string(data))
+	_, err = fmt.Fprintf(outputWriter, "%s\n", string(data))
 	if err != nil {
 		_, err = fmt.Fprintf(errorOutputWriter, "error writing output: %v\n", err)
 		return err
