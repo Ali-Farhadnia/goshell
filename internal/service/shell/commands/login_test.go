@@ -34,7 +34,7 @@ func TestLoginCommand_Execute(t *testing.T) {
 			name: "success - login user without password",
 			args: []string{"testuser"},
 			setupUserRepo: func(repo *userRepository.UserRepositoryMock) {
-				repo.On("FindUserByUsername", "testuser").Return(&user.User{Username: "testuser", ID: 1}, nil).Once()
+				repo.On("FindUserByUsername", "testuser").Return(user.User{Username: "testuser", ID: 1}, nil).Once()
 				repo.On("UpdateLastLogin", int64(1)).Return(nil).Once()
 			},
 			setupSession: func(repo *shellRepository.SessionRepositoryMock) {
@@ -50,7 +50,7 @@ func TestLoginCommand_Execute(t *testing.T) {
 			name: "success - login user with correct password",
 			args: []string{"testuser", "correctpassword"},
 			setupUserRepo: func(repo *userRepository.UserRepositoryMock) {
-				repo.On("FindUserByUsername", "testuser").Return(&user.User{
+				repo.On("FindUserByUsername", "testuser").Return(user.User{
 					Username:     "testuser",
 					ID:           1,
 					PasswordHash: &hashedPasswordStr,
@@ -68,7 +68,7 @@ func TestLoginCommand_Execute(t *testing.T) {
 			name: "failure - incorrect password",
 			args: []string{"testuser", "wrongpassword"},
 			setupUserRepo: func(repo *userRepository.UserRepositoryMock) {
-				repo.On("FindUserByUsername", "testuser").Return(&user.User{
+				repo.On("FindUserByUsername", "testuser").Return(user.User{
 					Username:     "testuser",
 					ID:           1,
 					PasswordHash: &hashedPasswordStr,
@@ -90,7 +90,7 @@ func TestLoginCommand_Execute(t *testing.T) {
 			name: "failure - user not found",
 			args: []string{"testuser"},
 			setupUserRepo: func(repo *userRepository.UserRepositoryMock) {
-				repo.On("FindUserByUsername", "testuser").Return(nil, errors.New("user not found")).Once()
+				repo.On("FindUserByUsername", "testuser").Return(nil, user.ErrUserNotFound).Once()
 			},
 			setupSession:   func(repo *shellRepository.SessionRepositoryMock) {},
 			expectedOutput: "",
@@ -100,7 +100,7 @@ func TestLoginCommand_Execute(t *testing.T) {
 			name: "failure - session get error",
 			args: []string{"testuser"},
 			setupUserRepo: func(repo *userRepository.UserRepositoryMock) {
-				repo.On("FindUserByUsername", "testuser").Return(&user.User{Username: "testuser", ID: 1}, nil).Once()
+				repo.On("FindUserByUsername", "testuser").Return(user.User{Username: "testuser", ID: 1}, nil).Once()
 				repo.On("UpdateLastLogin", int64(1)).Return(nil).Once()
 			},
 			setupSession: func(repo *shellRepository.SessionRepositoryMock) {
@@ -113,7 +113,7 @@ func TestLoginCommand_Execute(t *testing.T) {
 			name: "failure - session save error",
 			args: []string{"testuser"},
 			setupUserRepo: func(repo *userRepository.UserRepositoryMock) {
-				repo.On("FindUserByUsername", "testuser").Return(&user.User{Username: "testuser", ID: 1}, nil).Once()
+				repo.On("FindUserByUsername", "testuser").Return(user.User{Username: "testuser", ID: 1}, nil).Once()
 				repo.On("UpdateLastLogin", int64(1)).Return(nil).Once()
 			},
 			setupSession: func(repo *shellRepository.SessionRepositoryMock) {
@@ -127,7 +127,7 @@ func TestLoginCommand_Execute(t *testing.T) {
 			name: "failure - update last login error",
 			args: []string{"testuser"},
 			setupUserRepo: func(repo *userRepository.UserRepositoryMock) {
-				repo.On("FindUserByUsername", "testuser").Return(&user.User{Username: "testuser", ID: 1}, nil).Once()
+				repo.On("FindUserByUsername", "testuser").Return(user.User{Username: "testuser", ID: 1}, nil).Once()
 				repo.On("UpdateLastLogin", int64(1)).Return(errors.New("last login error")).Once()
 			},
 			setupSession:   func(repo *shellRepository.SessionRepositoryMock) {},
