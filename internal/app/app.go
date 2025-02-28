@@ -18,7 +18,7 @@ import (
 	shellRepository "github.com/Ali-Farhadnia/goshell/internal/service/shell/repository"
 	"github.com/Ali-Farhadnia/goshell/internal/service/user"
 	userRepository "github.com/Ali-Farhadnia/goshell/internal/service/user/repository"
-	"github.com/Ali-Farhadnia/goshell/pkg/execpath/inputprocessor"
+	"github.com/Ali-Farhadnia/goshell/pkg/inputprocessor"
 )
 
 // Shell is the main shell application

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -106,29 +107,42 @@ func TestParseArguments(t *testing.T) {
 }
 
 func TestProcessRedirections(t *testing.T) {
+	currentDir, err := os.Getwd()
+	assert.NoError(t, err)
+
 	// Create temporary files for testing
-	tmpIn, err := os.CreateTemp("", "input")
+	tmpIn, err := os.CreateTemp(currentDir, "input")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.Remove(tmpIn.Name())
 
-	tmpOut, err := os.CreateTemp("", "output")
+	inputFileName := filepath.Base(tmpIn.Name())
+
+	tmpOut, err := os.CreateTemp(currentDir, "output")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.Remove(tmpOut.Name())
 
-	tmpErr, err := os.CreateTemp("", "error")
+	outputFileName := filepath.Base(tmpOut.Name())
+
+	tmpErr, err := os.CreateTemp(currentDir, "error")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.Remove(tmpErr.Name())
 
+	errFileName := filepath.Base(tmpErr.Name())
+
 	// Write test data to input file
 	inputData := "test input data"
-	tmpIn.WriteString(inputData)
-	tmpIn.Close()
+	_, err = tmpIn.WriteString(inputData)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer tmpIn.Close()
 
 	tests := []struct {
 		name           string
@@ -148,7 +162,7 @@ func TestProcessRedirections(t *testing.T) {
 		},
 		{
 			name:           "output redirection",
-			args:           []string{"echo", "hello", ">", tmpOut.Name()},
+			args:           []string{"echo", "hello", ">", outputFileName},
 			expectedArgs:   []string{"echo", "hello"},
 			checkInput:     false,
 			checkOutput:    true,
@@ -156,7 +170,7 @@ func TestProcessRedirections(t *testing.T) {
 		},
 		{
 			name:           "input redirection",
-			args:           []string{"cat", "<", tmpIn.Name()},
+			args:           []string{"cat", "<", inputFileName},
 			expectedArgs:   []string{"cat"},
 			checkInput:     true,
 			checkOutput:    false,
@@ -164,7 +178,7 @@ func TestProcessRedirections(t *testing.T) {
 		},
 		{
 			name:           "error redirection",
-			args:           []string{"ls", "nonexistent", "2>", tmpErr.Name()},
+			args:           []string{"ls", "nonexistent", "2>", errFileName},
 			expectedArgs:   []string{"ls", "nonexistent"},
 			checkInput:     false,
 			checkOutput:    false,
@@ -172,7 +186,7 @@ func TestProcessRedirections(t *testing.T) {
 		},
 		{
 			name:           "append output",
-			args:           []string{"echo", "hello", ">>", tmpOut.Name()},
+			args:           []string{"echo", "hello", ">>", outputFileName},
 			expectedArgs:   []string{"echo", "hello"},
 			checkInput:     false,
 			checkOutput:    true,
@@ -180,7 +194,7 @@ func TestProcessRedirections(t *testing.T) {
 		},
 		{
 			name:           "append error",
-			args:           []string{"ls", "nonexistent", "2>>", tmpErr.Name()},
+			args:           []string{"ls", "nonexistent", "2>>", errFileName},
 			expectedArgs:   []string{"ls", "nonexistent"},
 			checkInput:     false,
 			checkOutput:    false,
@@ -188,7 +202,7 @@ func TestProcessRedirections(t *testing.T) {
 		},
 		{
 			name:           "multiple redirections",
-			args:           []string{"cat", "<", tmpIn.Name(), ">", tmpOut.Name(), "2>", tmpErr.Name()},
+			args:           []string{"cat", "<", inputFileName, ">", outputFileName, "2>", errFileName},
 			expectedArgs:   []string{"cat"},
 			checkInput:     true,
 			checkOutput:    true,
@@ -198,7 +212,7 @@ func TestProcessRedirections(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			currentDir, _ := os.Getwd()
+
 			reader, writer, errWriter, cleanArgs, cleanup := ProcessRedirections(tt.args, currentDir)
 			defer cleanup()
 
