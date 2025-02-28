@@ -75,10 +75,15 @@ func New(cfg *config.Config) (*App, error) {
 	// users
 	shellSVC.RegisterCommand(commands.NewUsersCommand(userSVC))
 
+	curDir, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
 	// create guest user
 	sessionRepo.SetSession(shell.Session{
 		User:       nil,
-		WorkingDir: "/",
+		WorkingDir: curDir,
 	})
 
 	return &App{
@@ -96,12 +101,13 @@ func (a *App) Run() error {
 		if err != nil {
 			return err
 		}
-		var userName string
 		if session.User != nil {
-			userName = session.User.Username
+			fmt.Printf("%s:$ ", session.User.Username)
+		} else {
+			fmt.Print("$ ")
+
 		}
 
-		fmt.Printf("%s:$ ", userName)
 		input, err := reader.ReadString('\n')
 		if err != nil {
 			if errors.Is(err, io.EOF) {
