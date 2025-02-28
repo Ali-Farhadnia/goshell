@@ -20,28 +20,28 @@ func New(db *database.DB) *Repository {
 }
 
 // FindUserByUsername finds a user by username
-func (r *Repository) FindUserByUsername(username string) (*user.User, error) {
+func (r *Repository) FindUserByUsername(username string) (user.User, error) {
 	var usr user.User
 	result := r.db.Where("username = ?", username).First(&usr)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, user.ErrUserNotFound
+			return user.User{}, user.ErrUserNotFound
 		}
 
-		return nil, result.Error
+		return user.User{}, result.Error
 	}
 
-	return &usr, nil
+	return usr, nil
 }
 
 // CreateUser creates a new user
-func (r *Repository) CreateUser(user *user.User) error {
-	return r.db.Create(user).Error
+func (r *Repository) CreateUser(user user.User) error {
+	return r.db.Create(&user).Error
 }
 
 // UpdateUser updates an existing user
-func (r *Repository) UpdateUser(user *user.User) error {
-	return r.db.Save(user).Error
+func (r *Repository) UpdateUser(user user.User) error {
+	return r.db.Save(&user).Error
 }
 
 // ListUsers lists all users

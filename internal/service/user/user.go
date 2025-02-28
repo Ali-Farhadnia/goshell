@@ -13,9 +13,9 @@ var (
 
 // UserRepository defines operations on users
 type UserRepository interface {
-	FindUserByUsername(username string) (*User, error)
-	CreateUser(user *User) error
-	UpdateUser(user *User) error
+	FindUserByUsername(username string) (User, error)
+	CreateUser(user User) error
+	UpdateUser(user User) error
 	ListUsers() ([]User, error)
 	UpdateLastLogin(userID int64) error
 }
@@ -33,61 +33,61 @@ func New(userRepo UserRepository) *Service {
 }
 
 // FindUser finds a user by username
-func (s *Service) FindUser(username string) (*User, error) {
+func (s *Service) FindUser(username string) (User, error) {
 	return s.userRepo.FindUserByUsername(username)
 }
 
 // CreateUser creates a new user
-func (s *Service) CreateUser(username, password string) (*User, error) {
+func (s *Service) CreateUser(username, password string) (User, error) {
 	// Check if user already exists
-	existingUser, err := s.userRepo.FindUserByUsername(username)
+	_, err := s.userRepo.FindUserByUsername(username)
 	if err != nil && !errors.Is(err, ErrUserNotFound) {
-		return nil, err
+		return User{}, err
 	}
 
-	if err == nil && existingUser != nil {
-		return nil, fmt.Errorf("user already exists: %s", username)
+	if err == nil {
+		return User{}, fmt.Errorf("user already exists: %s", username)
 	}
 
 	var passwordHash *string
 	if password != "" {
 		hash, err := hashPassword(password)
 		if err != nil {
-			return nil, fmt.Errorf("failed to hash password: %w", err)
+			return User{}, fmt.Errorf("failed to hash password: %w", err)
 		}
 		passwordHash = &hash
 	}
 
 	// Create user in database
-	user := &User{
+	user := User{
 		Username:     username,
 		PasswordHash: passwordHash,
 	}
 
 	if err := s.userRepo.CreateUser(user); err != nil {
-		return nil, fmt.Errorf("failed to create user in database: %w", err)
+		return User{}, fmt.Errorf("failed to create user in database: %w", err)
 	}
 
 	return user, nil
 }
 
 // LoginUser logs in a user and updates last login time
-func (s *Service) LoginUser(username, password string) (*User, error) {
+func (s *Service) LoginUser(username, password string) (User, error) {
 	user, err := s.userRepo.FindUserByUsername(username)
 	if err != nil {
-		return nil, fmt.Errorf("error on finding user: %w", err)
+		return User{}, fmt.Errorf("error on finding user: %w", err)
 	}
 
 	// Verify password if it is set
 	if user.PasswordHash != nil {
 		if err := verifyPassword(*user.PasswordHash, password); err != nil {
-			return nil, fmt.Errorf("invalid password")
+			return User{}, fmt.Errorf("invalid password")
 		}
 	}
 
 	// Update last login time
 	if err := s.userRepo.UpdateLastLogin(user.ID); err != nil {
-		return nil, fmt.Errorf("failed to update last login time: %w", err)
+		return User{}, fmt.Errorf("failed to update last login time: %w", err)
 	}
 
 	return user, nil

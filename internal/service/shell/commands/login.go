@@ -58,7 +58,7 @@ func (c *LoginCommand) Execute(ctx context.Context, args []string, inputReader i
 		return err
 	}
 
-	session.User = user
+	session.User = &user
 
 	err = c.sessionRepo.SetSession(session)
 	if err != nil {
