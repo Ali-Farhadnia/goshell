@@ -198,7 +198,8 @@ func TestProcessRedirections(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader, writer, errWriter, cleanArgs, cleanup := ProcessRedirections(tt.args)
+			currentDir, _ := os.Getwd()
+			reader, writer, errWriter, cleanArgs, cleanup := ProcessRedirections(tt.args, currentDir)
 			defer cleanup()
 
 			// Check that arguments were cleaned correctly
@@ -259,8 +260,9 @@ func TestProcessRedirectionsInvalidFiles(t *testing.T) {
 	os.Stdout = w
 
 	// Test with invalid file paths
+	currentDir, _ := os.Getwd()
 	args := []string{"cat", "<", "/invalid/path/that/should/not/exist"}
-	_, _, _, _, cleanup := ProcessRedirections(args)
+	_, _, _, _, cleanup := ProcessRedirections(args, currentDir)
 	cleanup()
 
 	// Restore stdout

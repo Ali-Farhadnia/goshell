@@ -130,7 +130,7 @@ func (a *App) Run() error {
 		}
 
 		// Handle redirections and get clean arguments
-		inputReader, outputWriter, errorOutputWriter, cleanArgs, cleanup := inputprocessor.ProcessRedirections(args)
+		inputReader, outputWriter, errorOutputWriter, cleanArgs, cleanup := inputprocessor.ProcessRedirections(args, session.WorkingDir)
 		defer cleanup()
 
 		if len(cleanArgs) == 0 {

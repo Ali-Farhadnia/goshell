@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -74,7 +75,7 @@ func ParseArguments(input string) ([]string, error) {
 }
 
 // ProcessRedirections processes the input arguments for redirections and returns the appropriate readers/writers.
-func ProcessRedirections(args []string) (io.Reader, io.Writer, io.Writer, []string, func()) {
+func ProcessRedirections(args []string, currentDir string) (io.Reader, io.Writer, io.Writer, []string, func()) {
 	inputReader := os.Stdin
 	outputWriter := os.Stdout
 	errorOutputWriter := os.Stderr
@@ -85,7 +86,8 @@ func ProcessRedirections(args []string) (io.Reader, io.Writer, io.Writer, []stri
 		switch args[i] {
 		case ">":
 			if i+1 < len(args) {
-				f, err := os.Create(args[i+1])
+				filePath := filepath.Join(currentDir, args[i+1]) // Use currentDir
+				f, err := os.Create(filePath)
 				if err != nil {
 					fmt.Println("error:", err)
 					continue
@@ -96,7 +98,8 @@ func ProcessRedirections(args []string) (io.Reader, io.Writer, io.Writer, []stri
 			}
 		case ">>":
 			if i+1 < len(args) {
-				f, err := os.OpenFile(args[i+1], os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				filePath := filepath.Join(currentDir, args[i+1]) // Use currentDir
+				f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 				if err != nil {
 					fmt.Println("error:", err)
 					continue
@@ -107,7 +110,8 @@ func ProcessRedirections(args []string) (io.Reader, io.Writer, io.Writer, []stri
 			}
 		case "2>":
 			if i+1 < len(args) {
-				f, err := os.Create(args[i+1])
+				filePath := filepath.Join(currentDir, args[i+1]) // Use currentDir
+				f, err := os.Create(filePath)
 				if err != nil {
 					fmt.Println("error:", err)
 					continue
@@ -118,7 +122,8 @@ func ProcessRedirections(args []string) (io.Reader, io.Writer, io.Writer, []stri
 			}
 		case "2>>":
 			if i+1 < len(args) {
-				f, err := os.OpenFile(args[i+1], os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				filePath := filepath.Join(currentDir, args[i+1]) // Use currentDir
+				f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 				if err != nil {
 					fmt.Println("error:", err)
 					continue
@@ -129,7 +134,8 @@ func ProcessRedirections(args []string) (io.Reader, io.Writer, io.Writer, []stri
 			}
 		case "<":
 			if i+1 < len(args) {
-				f, err := os.Open(args[i+1])
+				filePath := filepath.Join(currentDir, args[i+1]) // Use currentDir
+				f, err := os.Open(filePath)
 				if err != nil {
 					fmt.Println("error:", err)
 					continue
