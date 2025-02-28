@@ -54,14 +54,14 @@ func (c *HistoryCommand) Execute(ctx context.Context, args []string, inputReader
 	// Parse flags
 	if len(args) > 0 {
 		switch args[0] {
-		case "clear":
+		case "clean":
 			err := c.historySVC.ClearCommandHistory(userID)
 			if err != nil {
-				_, err = fmt.Fprintf(errorOutputWriter, "error clearing history: %v\n", err)
+				_, err = fmt.Fprintf(errorOutputWriter, "error cleaning history: %v\n", err)
 				return err
 			}
 
-			_, err = fmt.Fprintln(outputWriter, "History cleared.")
+			_, err = fmt.Fprintln(outputWriter, "History cleaned.")
 			return err
 
 		case "-n", "--limit":

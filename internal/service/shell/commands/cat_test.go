@@ -44,7 +44,7 @@ func TestCatCommand_Execute(t *testing.T) {
 			setupRepo: func() {
 				mockRepo.On("GetSession").Return(shell.Session{WorkingDir: "/tmp"}, nil).Once()
 			},
-			expectedOutput: content,
+			expectedOutput: content + "\n",
 			expectedError:  "",
 		},
 		{
@@ -53,7 +53,7 @@ func TestCatCommand_Execute(t *testing.T) {
 			setupRepo: func() {
 				mockRepo.On("GetSession").Return(shell.Session{WorkingDir: filepath.Dir(tempFile.Name())}, nil).Once()
 			},
-			expectedOutput: content,
+			expectedOutput: content + "\n",
 			expectedError:  "",
 		},
 		{

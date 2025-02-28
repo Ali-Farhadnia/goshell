@@ -57,15 +57,15 @@ func TestHistoryCommand_Execute(t *testing.T) {
 			expectedError:  "",
 		},
 		{
-			name: "success - clear history",
-			args: []string{"clear"},
+			name: "success - Clean history",
+			args: []string{"clean"},
 			setupSession: func(repo *shellRepository.SessionRepositoryMock) {
 				repo.On("GetSession").Return(shell.Session{User: &user.User{ID: 123}}, nil).Once()
 			},
 			setupHistory: func(repo, guestRepo *historyRepository.HistoryRepositoryMock) {
 				repo.On("ClearUserHistory", int64(123)).Return(nil).Once()
 			},
-			expectedOutput: "History cleared.\n",
+			expectedOutput: "History cleaned.\n",
 			expectedError:  "",
 		},
 		{
@@ -109,16 +109,16 @@ func TestHistoryCommand_Execute(t *testing.T) {
 			expectedError:  "error retrieving history: history error\n",
 		},
 		{
-			name: "failure - clear history service error",
-			args: []string{"clear"},
+			name: "failure - Clean history service error",
+			args: []string{"clean"},
 			setupSession: func(repo *shellRepository.SessionRepositoryMock) {
 				repo.On("GetSession").Return(shell.Session{User: &user.User{ID: 123}}, nil).Once()
 			},
 			setupHistory: func(repo, guestRepo *historyRepository.HistoryRepositoryMock) {
-				repo.On("ClearUserHistory", int64(123)).Return(errors.New("clear error")).Once()
+				repo.On("ClearUserHistory", int64(123)).Return(errors.New("clean error")).Once()
 			},
 			expectedOutput: "",
-			expectedError:  "error clearing history: clear error\n",
+			expectedError:  "error cleaning history: clean error\n",
 		},
 		{
 			name: "success - guest history",
@@ -135,15 +135,15 @@ func TestHistoryCommand_Execute(t *testing.T) {
 			expectedError:  "",
 		},
 		{
-			name: "success - clear guest history",
-			args: []string{"clear"},
+			name: "success - clean guest history",
+			args: []string{"clean"},
 			setupSession: func(repo *shellRepository.SessionRepositoryMock) {
 				repo.On("GetSession").Return(shell.Session{}, nil).Once()
 			},
 			setupHistory: func(repo, guestRepo *historyRepository.HistoryRepositoryMock) {
 				guestRepo.On("ClearUserHistory", guestID).Return(nil).Once()
 			},
-			expectedOutput: "History cleared.\n",
+			expectedOutput: "History cleaned.\n",
 			expectedError:  "",
 		},
 	}
