@@ -46,6 +46,7 @@ type Service struct {
 	sessionRepo   SessionRepository
 	commandRepo   CommandRepository
 	systemCommand *SystemCommand
+	path          string
 }
 
 func NewService(
@@ -53,12 +54,14 @@ func NewService(
 	sessionRepo SessionRepository,
 	commandRepo CommandRepository,
 	systemCommand *SystemCommand,
+	path string,
 ) *Service {
 	return &Service{
 		historySVC:    historySVC,
 		sessionRepo:   sessionRepo,
 		commandRepo:   commandRepo,
 		systemCommand: systemCommand,
+		path:          path,
 	}
 }
 
@@ -77,7 +80,7 @@ func (s *Service) ExecuteCommand(ctx context.Context, cmdName string, args []str
 		}
 
 		// Check if it's a system command
-		if _, err := execpath.FindExecutable(cmdName); err != nil {
+		if _, err := execpath.FindExecutable(cmdName, s.path); err != nil {
 			return err
 		}
 

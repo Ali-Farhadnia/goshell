@@ -8,9 +8,8 @@ import (
 )
 
 // findExecutable searches for the executable in the system's PATH.
-func FindExecutable(cmd string) (string, error) { //Capitalized function name.
-	pathEnv := os.Getenv("PATH")
-	paths := strings.Split(pathEnv, string(os.PathListSeparator))
+func FindExecutable(cmd string, path string) (string, error) { //Capitalized function name.
+	paths := strings.Split(path, string(os.PathListSeparator))
 
 	for _, dir := range paths {
 		exePath := filepath.Join(dir, cmd)

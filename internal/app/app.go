@@ -43,7 +43,7 @@ func New(cfg *config.Config) (*App, error) {
 
 	userSVC := user.New(usrRepo)
 	historySVC := history.New(historyRepo, guestHisotryCache, -1)
-	shellSVC := shell.NewService(historySVC, sessionRepo, cmdRepo, shell.NewSystemCommand(sessionRepo))
+	shellSVC := shell.NewService(historySVC, sessionRepo, cmdRepo, shell.NewSystemCommand(sessionRepo, os.Getenv("PATH")), os.Getenv("PATH"))
 
 	// register commands
 
@@ -54,7 +54,7 @@ func New(cfg *config.Config) (*App, error) {
 	// cat
 	shellSVC.RegisterCommand(commands.NewCatCommand(sessionRepo))
 	// type
-	shellSVC.RegisterCommand(commands.NewTypeCommand(cmdRepo))
+	shellSVC.RegisterCommand(commands.NewTypeCommand(cmdRepo, os.Getenv("PATH")))
 	// pwd
 	shellSVC.RegisterCommand(commands.NewPWDCommand(sessionRepo))
 	// adduser

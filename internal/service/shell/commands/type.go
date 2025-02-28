@@ -11,10 +11,17 @@ import (
 
 type TypeCommand struct {
 	cmdRepo shell.CommandRepository
+	path    string
 }
 
-func NewTypeCommand(cmdRepo shell.CommandRepository) *TypeCommand {
-	return &TypeCommand{cmdRepo: cmdRepo}
+func NewTypeCommand(
+	cmdRepo shell.CommandRepository,
+	path string,
+) *TypeCommand {
+	return &TypeCommand{
+		cmdRepo: cmdRepo,
+		path:    path,
+	}
 }
 
 func (t *TypeCommand) Name() string {
@@ -41,7 +48,7 @@ func (t *TypeCommand) Execute(ctx context.Context, args []string, inputReader io
 	}
 
 	// Check if it's an executable in $PATH
-	cmdPath, err := execpath.FindExecutable(cmdName)
+	cmdPath, err := execpath.FindExecutable(cmdName, t.path)
 	if err != nil {
 		_, err = fmt.Fprintf(errorOutputWriter, "%v\n", err)
 		return err

@@ -13,19 +13,24 @@ import (
 // SystemCommand executes system commands
 type SystemCommand struct {
 	sessionRepo SessionRepository
+	path        string
 }
 
 // NewSystemCommand creates a new system command handler
-func NewSystemCommand(sessionRepo SessionRepository) *SystemCommand {
+func NewSystemCommand(
+	sessionRepo SessionRepository,
+	path string,
+) *SystemCommand {
 	return &SystemCommand{
 		sessionRepo: sessionRepo,
+		path:        path,
 	}
 }
 
 // Execute runs the system command
 func (c *SystemCommand) Execute(ctx context.Context, cmdName string, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	// Check if it's an executable in $PATH
-	cmdPath, err := execpath.FindExecutable(cmdName)
+	cmdPath, err := execpath.FindExecutable(cmdName, c.path)
 	if err != nil {
 		_, err := fmt.Fprintf(errorOutputWriter, "command not found: %s\n", cmdName)
 		return err
