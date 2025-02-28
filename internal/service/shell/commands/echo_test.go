@@ -12,81 +12,78 @@ import (
 )
 
 func TestEchoCommand_Execute(t *testing.T) {
-	ctx := context.Background()
+	cases := []struct {
+		name           string
+		args           []string
+		expectedOutput string
+		expectedError  string
+		setupEnv       map[string]string
+		teardownEnv    []string
+	}{
+		{
+			name:           "prints plain arguments",
+			args:           []string{"Hello", "World"},
+			expectedOutput: "Hello World\n",
+			expectedError:  "",
+		},
+		{
+			name:           "handles single-quoted literals",
+			args:           []string{"'Hello'", "'World'"},
+			expectedOutput: "Hello World\n",
+			expectedError:  "",
+		},
+		{
+			name:           "expands environment variables",
+			args:           []string{"Hello", "$TEST_VAR"},
+			expectedOutput: "Hello GoShell\n",
+			expectedError:  "",
+			setupEnv:       map[string]string{"TEST_VAR": "GoShell"},
+			teardownEnv:    []string{"TEST_VAR"},
+		},
+		{
+			name:           "handles multiple environment variables",
+			args:           []string{"$VAR1", "and", "$VAR2"},
+			expectedOutput: "Foo and Bar\n",
+			expectedError:  "",
+			setupEnv:       map[string]string{"VAR1": "Foo", "VAR2": "Bar"},
+			teardownEnv:    []string{"VAR1", "VAR2"},
+		},
+		{
+			name:           "ignores undefined environment variables",
+			args:           []string{"Hello", "$UNDEFINED_VAR"},
+			expectedOutput: "Hello\n",
+			expectedError:  "",
+		},
+		{
+			name:           "returns empty string when no arguments",
+			args:           []string{},
+			expectedOutput: "\n",
+			expectedError:  "",
+		},
+	}
 
-	cmd := commands.NewEchoCommand()
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var outputBuffer bytes.Buffer
+			var errorBuffer bytes.Buffer
+			ctx := context.Background()
+			cmd := commands.NewEchoCommand()
 
-	t.Run("success - prints plain arguments", func(t *testing.T) {
-		var outputBuffer bytes.Buffer
-		var errorBuffer bytes.Buffer
+			// Setup environment variables
+			for key, value := range tc.setupEnv {
+				os.Setenv(key, value)
+			}
 
-		err := cmd.Execute(ctx, []string{"Hello", "World"}, nil, &outputBuffer, &errorBuffer)
-		assert.NoError(t, err)
-		assert.Equal(t, "Hello World\n", outputBuffer.String())
-		assert.Empty(t, errorBuffer.String())
-	})
+			err := cmd.Execute(ctx, tc.args, strings.NewReader(""), &outputBuffer, &errorBuffer)
 
-	t.Run("success - handles single-quoted literals", func(t *testing.T) {
-		var outputBuffer bytes.Buffer
-		var errorBuffer bytes.Buffer
+			// Teardown environment variables
+			for _, key := range tc.teardownEnv {
+				os.Unsetenv(key)
+			}
 
-		err := cmd.Execute(ctx, []string{"'Hello'", "'World'"}, nil, &outputBuffer, &errorBuffer)
-
-		assert.NoError(t, err)
-		assert.Empty(t, errorBuffer.String())
-		assert.Equal(t, "Hello World\n", outputBuffer.String())
-	})
-
-	t.Run("success - expands environment variables", func(t *testing.T) {
-		var outputBuffer bytes.Buffer
-		var errorBuffer bytes.Buffer
-
-		os.Setenv("TEST_VAR", "GoShell")
-		defer os.Unsetenv("TEST_VAR")
-
-		err := cmd.Execute(ctx, []string{"Hello", "$TEST_VAR"}, nil, &outputBuffer, &errorBuffer)
-
-		assert.NoError(t, err)
-		assert.Empty(t, errorBuffer.String())
-		assert.Equal(t, "Hello GoShell\n", outputBuffer.String())
-	})
-
-	t.Run("success - handles multiple environment variables", func(t *testing.T) {
-		var outputBuffer bytes.Buffer
-		var errorBuffer bytes.Buffer
-
-		os.Setenv("VAR1", "Foo")
-		os.Setenv("VAR2", "Bar")
-		defer os.Unsetenv("VAR1")
-		defer os.Unsetenv("VAR2")
-
-		err := cmd.Execute(ctx, []string{"$VAR1", "and", "$VAR2"}, nil, &outputBuffer, &errorBuffer)
-
-		assert.NoError(t, err)
-		assert.Empty(t, errorBuffer.String())
-		assert.Equal(t, "Foo and Bar\n", outputBuffer.String())
-	})
-
-	t.Run("success - ignores undefined environment variables", func(t *testing.T) {
-		var outputBuffer bytes.Buffer
-		var errorBuffer bytes.Buffer
-
-		err := cmd.Execute(ctx, []string{"Hello", "$UNDEFINED_VAR"}, nil, &outputBuffer, &errorBuffer)
-		assert.NoError(t, err)
-		assert.Empty(t, errorBuffer.String())
-		assert.Equal(t, "Hello\n", outputBuffer.String())
-	})
-
-	t.Run("success - returns empty string when no arguments", func(t *testing.T) {
-		var outputBuffer bytes.Buffer
-		var errorBuffer bytes.Buffer
-		input := strings.NewReader("")
-
-		err := cmd.Execute(ctx, []string{}, input, &outputBuffer, &errorBuffer)
-
-		assert.NoError(t, err)
-		assert.Empty(t, errorBuffer.String())
-		assert.Equal(t, "\n", outputBuffer.String())
-	})
-
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedOutput, outputBuffer.String())
+			assert.Equal(t, tc.expectedError, errorBuffer.String())
+		})
+	}
 }

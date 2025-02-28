@@ -12,6 +12,7 @@ import (
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell/commands"
 	"github.com/Ali-Farhadnia/goshell/internal/service/shell/repository"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestCatCommand_Execute(t *testing.T) {
@@ -19,7 +20,6 @@ func TestCatCommand_Execute(t *testing.T) {
 
 	// Create a mock session repository
 	mockRepo := new(repository.SessionRepositoryMock)
-	cmd := commands.NewCatCommand(mockRepo)
 
 	// Create a temporary file for testing
 	tempFile, err := os.CreateTemp("", "testfile")
@@ -31,66 +31,73 @@ func TestCatCommand_Execute(t *testing.T) {
 	assert.NoError(t, err)
 	tempFile.Close()
 
-	t.Run("success - absolute path", func(t *testing.T) {
-		mockRepo.On("GetSession").Return(shell.Session{WorkingDir: "/tmp"}, nil).Once()
-		var outputBuffer bytes.Buffer
-		var errorBuffer bytes.Buffer
+	cases := []struct {
+		name           string
+		args           []string
+		setupRepo      func()
+		expectedOutput string
+		expectedError  string
+	}{
+		{
+			name: "success - absolute path",
+			args: []string{tempFile.Name()},
+			setupRepo: func() {
+				mockRepo.On("GetSession").Return(shell.Session{WorkingDir: "/tmp"}, nil).Once()
+			},
+			expectedOutput: content,
+			expectedError:  "",
+		},
+		{
+			name: "success - relative path",
+			args: []string{filepath.Base(tempFile.Name())},
+			setupRepo: func() {
+				mockRepo.On("GetSession").Return(shell.Session{WorkingDir: filepath.Dir(tempFile.Name())}, nil).Once()
+			},
+			expectedOutput: content,
+			expectedError:  "",
+		},
+		{
+			name: "failure - file not found",
+			args: []string{"/nonexistent/file.txt"},
+			setupRepo: func() {
+				mockRepo.On("GetSession").Return(shell.Session{WorkingDir: "/tmp"}, nil).Once()
+			},
+			expectedOutput: "",
+			expectedError:  "error reading file",
+		},
+		{
+			name: "failure - session error",
+			args: []string{"somefile.txt"},
+			setupRepo: func() {
+				mockRepo.On("GetSession").Return(shell.Session{}, errors.New("session error")).Once()
+			},
+			expectedOutput: "",
+			expectedError:  "error getting session",
+		},
+		{
+			name:           "failure - no arguments",
+			args:           []string{},
+			setupRepo:      func() {},
+			expectedOutput: "",
+			expectedError:  "usage: cat <filename>\n",
+		},
+	}
 
-		err := cmd.Execute(ctx, []string{tempFile.Name()}, nil, &outputBuffer, &errorBuffer)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockRepo.Mock = mock.Mock{} // Reset mock
+			tc.setupRepo()
 
-		assert.NoError(t, err)
-		assert.Equal(t, content, outputBuffer.String())
-		assert.Empty(t, errorBuffer.String())
-		mockRepo.AssertExpectations(t)
-	})
+			var outputBuffer bytes.Buffer
+			var errorBuffer bytes.Buffer
 
-	t.Run("success - relative path", func(t *testing.T) {
-		mockRepo.On("GetSession").Return(shell.Session{WorkingDir: filepath.Dir(tempFile.Name())}, nil).Once()
-		var outputBuffer bytes.Buffer
-		var errorBuffer bytes.Buffer
+			cmd := commands.NewCatCommand(mockRepo)
+			err := cmd.Execute(ctx, tc.args, nil, &outputBuffer, &errorBuffer)
 
-		err := cmd.Execute(ctx, []string{filepath.Base(tempFile.Name())}, nil, &outputBuffer, &errorBuffer)
-
-		assert.NoError(t, err)
-		assert.Equal(t, content, outputBuffer.String())
-		assert.Empty(t, errorBuffer.String())
-		mockRepo.AssertExpectations(t)
-	})
-
-	t.Run("failure - file not found", func(t *testing.T) {
-		mockRepo.On("GetSession").Return(shell.Session{WorkingDir: "/tmp"}, nil).Once()
-		var outputBuffer bytes.Buffer
-		var errorBuffer bytes.Buffer
-
-		err := cmd.Execute(ctx, []string{"/nonexistent/file.txt"}, nil, &outputBuffer, &errorBuffer)
-
-		assert.NoError(t, err)
-		assert.Empty(t, outputBuffer.String())
-		assert.Contains(t, errorBuffer.String(), "error reading file")
-		mockRepo.AssertExpectations(t)
-	})
-
-	t.Run("failure - session error", func(t *testing.T) {
-		mockRepo.On("GetSession").Return(shell.Session{}, errors.New("session error")).Once()
-		var outputBuffer bytes.Buffer
-		var errorBuffer bytes.Buffer
-
-		err := cmd.Execute(ctx, []string{"somefile.txt"}, nil, &outputBuffer, &errorBuffer)
-
-		assert.NoError(t, err)
-		assert.Empty(t, outputBuffer.String())
-		assert.Contains(t, errorBuffer.String(), "error getting session")
-		mockRepo.AssertExpectations(t)
-	})
-
-	t.Run("failure - no arguments", func(t *testing.T) {
-		var outputBuffer bytes.Buffer
-		var errorBuffer bytes.Buffer
-
-		err := cmd.Execute(ctx, []string{}, nil, &outputBuffer, &errorBuffer)
-
-		assert.NoError(t, err)
-		assert.Empty(t, outputBuffer.String())
-		assert.Equal(t, "usage: cat <filename>\n", errorBuffer.String())
-	})
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedOutput, outputBuffer.String())
+			assert.Contains(t, errorBuffer.String(), tc.expectedError)
+			mockRepo.AssertExpectations(t)
+		})
+	}
 }
