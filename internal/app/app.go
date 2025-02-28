@@ -57,8 +57,12 @@ func New(cfg *config.Config) (*App, error) {
 	shellSVC.RegisterCommand(commands.NewTypeCommand(cmdRepo, os.Getenv("PATH")))
 	// pwd
 	shellSVC.RegisterCommand(commands.NewPWDCommand(sessionRepo))
+	// login
+	shellSVC.RegisterCommand(commands.NewLoginCommand(userSVC, sessionRepo))
 	// adduser
 	shellSVC.RegisterCommand(commands.NewAddUserCommand(userSVC))
+	// logout
+	shellSVC.RegisterCommand(commands.NewLogoutCommand(sessionRepo))
 	// ls
 	shellSVC.RegisterCommand(commands.NewLSCommand(sessionRepo))
 	// cd
@@ -94,7 +98,7 @@ func (a *App) Run() error {
 			userName = session.User.Username
 		}
 
-		fmt.Printf("%s> ", userName)
+		fmt.Printf("%s:$ ", userName)
 		input, err := reader.ReadString('\n')
 		if err != nil {
 			if errors.Is(err, io.EOF) {

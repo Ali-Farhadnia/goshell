@@ -1,7 +1,14 @@
 package user
 
 import (
+	"errors"
 	"fmt"
+
+	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	ErrUserNotFound = errors.New("user not found")
 )
 
 // UserRepository defines operations on users
@@ -31,16 +38,30 @@ func (s *Service) FindUser(username string) (*User, error) {
 }
 
 // CreateUser creates a new user
-func (s *Service) CreateUser(username string) (*User, error) {
+func (s *Service) CreateUser(username, password string) (*User, error) {
 	// Check if user already exists
 	existingUser, err := s.userRepo.FindUserByUsername(username)
+	if err != nil && !errors.Is(err, ErrUserNotFound) {
+		return nil, err
+	}
+
 	if err == nil && existingUser != nil {
 		return nil, fmt.Errorf("user already exists: %s", username)
 	}
 
+	var passwordHash *string
+	if password != "" {
+		hash, err := hashPassword(password)
+		if err != nil {
+			return nil, fmt.Errorf("failed to hash password: %w", err)
+		}
+		passwordHash = &hash
+	}
+
 	// Create user in database
 	user := &User{
-		Username: username,
+		Username:     username,
+		PasswordHash: passwordHash,
 	}
 
 	if err := s.userRepo.CreateUser(user); err != nil {
@@ -51,10 +72,17 @@ func (s *Service) CreateUser(username string) (*User, error) {
 }
 
 // LoginUser logs in a user and updates last login time
-func (s *Service) LoginUser(username string) (*User, error) {
+func (s *Service) LoginUser(username, password string) (*User, error) {
 	user, err := s.userRepo.FindUserByUsername(username)
 	if err != nil {
 		return nil, fmt.Errorf("error on finding user: %w", err)
+	}
+
+	// Verify password if it is set
+	if user.PasswordHash != nil {
+		if err := verifyPassword(*user.PasswordHash, password); err != nil {
+			return nil, fmt.Errorf("invalid password")
+		}
 	}
 
 	// Update last login time
@@ -68,4 +96,18 @@ func (s *Service) LoginUser(username string) (*User, error) {
 // ListUsers lists all users
 func (s *Service) ListUsers() ([]User, error) {
 	return s.userRepo.ListUsers()
+}
+
+// hashPassword hashes a password using bcrypt
+func hashPassword(password string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
+}
+
+// verifyPassword checks if the provided password matches the hashed password
+func verifyPassword(hashedPassword, password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }

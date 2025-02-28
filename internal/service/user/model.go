@@ -13,6 +13,7 @@ type User struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
-	Username  string     `gorm:"uniqueIndex;not null" json:"username"`
-	LastLogin *time.Time `json:"last_login"`
+	Username     string     `gorm:"uniqueIndex;not null" json:"username"`
+	PasswordHash *string    `json:"-"`
+	LastLogin    *time.Time `json:"last_login"`
 }

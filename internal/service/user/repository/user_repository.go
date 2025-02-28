@@ -1,10 +1,12 @@
 package repository
 
 import (
+	"errors"
 	"time"
 
 	"github.com/Ali-Farhadnia/goshell/internal/database"
 	"github.com/Ali-Farhadnia/goshell/internal/service/user"
+	"gorm.io/gorm"
 )
 
 // repository implements the Repository interface
@@ -19,12 +21,17 @@ func New(db *database.DB) *Repository {
 
 // FindUserByUsername finds a user by username
 func (r *Repository) FindUserByUsername(username string) (*user.User, error) {
-	var user user.User
-	result := r.db.Where("username = ?", username).First(&user)
+	var usr user.User
+	result := r.db.Where("username = ?", username).First(&usr)
 	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, user.ErrUserNotFound
+		}
+
 		return nil, result.Error
 	}
-	return &user, nil
+
+	return &usr, nil
 }
 
 // CreateUser creates a new user

@@ -13,10 +13,14 @@ import (
 	userRepository "github.com/Ali-Farhadnia/goshell/internal/service/user/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func TestLoginCommand_Execute(t *testing.T) {
 	ctx := context.Background()
+
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("correctpassword"), bcrypt.DefaultCost)
+	hashedPasswordStr := string(hashedPassword)
 
 	cases := []struct {
 		name           string
@@ -27,7 +31,7 @@ func TestLoginCommand_Execute(t *testing.T) {
 		expectedError  string
 	}{
 		{
-			name: "success - login user",
+			name: "success - login user without password",
 			args: []string{"testuser"},
 			setupUserRepo: func(repo *userRepository.UserRepositoryMock) {
 				repo.On("FindUserByUsername", "testuser").Return(&user.User{Username: "testuser", ID: 1}, nil).Once()
@@ -43,15 +47,47 @@ func TestLoginCommand_Execute(t *testing.T) {
 			expectedError:  "",
 		},
 		{
+			name: "success - login user with correct password",
+			args: []string{"testuser", "correctpassword"},
+			setupUserRepo: func(repo *userRepository.UserRepositoryMock) {
+				repo.On("FindUserByUsername", "testuser").Return(&user.User{
+					Username:     "testuser",
+					ID:           1,
+					PasswordHash: &hashedPasswordStr,
+				}, nil).Once()
+				repo.On("UpdateLastLogin", int64(1)).Return(nil).Once()
+			},
+			setupSession: func(repo *shellRepository.SessionRepositoryMock) {
+				repo.On("GetSession").Return(shell.Session{}, nil).Once()
+				repo.On("SetSession", mock.Anything).Return(nil).Once()
+			},
+			expectedOutput: "Logged in as: testuser\n",
+			expectedError:  "",
+		},
+		{
+			name: "failure - incorrect password",
+			args: []string{"testuser", "wrongpassword"},
+			setupUserRepo: func(repo *userRepository.UserRepositoryMock) {
+				repo.On("FindUserByUsername", "testuser").Return(&user.User{
+					Username:     "testuser",
+					ID:           1,
+					PasswordHash: &hashedPasswordStr,
+				}, nil).Once()
+			},
+			setupSession:   func(repo *shellRepository.SessionRepositoryMock) {},
+			expectedOutput: "",
+			expectedError:  "login failed: invalid password\n",
+		},
+		{
 			name:           "failure - missing username",
 			args:           []string{},
 			setupUserRepo:  func(repo *userRepository.UserRepositoryMock) {},
 			setupSession:   func(repo *shellRepository.SessionRepositoryMock) {},
 			expectedOutput: "",
-			expectedError:  "usage: login <username>\n",
+			expectedError:  "usage: login <username> [password]\n",
 		},
 		{
-			name: "failure - user login error",
+			name: "failure - user not found",
 			args: []string{"testuser"},
 			setupUserRepo: func(repo *userRepository.UserRepositoryMock) {
 				repo.On("FindUserByUsername", "testuser").Return(nil, errors.New("user not found")).Once()
@@ -115,8 +151,10 @@ func TestLoginCommand_Execute(t *testing.T) {
 			err := cmd.Execute(ctx, tc.args, nil, &outputBuffer, &errorBuffer)
 
 			assert.NoError(t, err)
+
 			assert.Equal(t, tc.expectedOutput, outputBuffer.String())
 			assert.Equal(t, tc.expectedError, errorBuffer.String())
+
 			mockUserRepo.AssertExpectations(t)
 			mockSessionRepo.AssertExpectations(t)
 		})

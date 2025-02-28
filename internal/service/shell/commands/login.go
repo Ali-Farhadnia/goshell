@@ -36,12 +36,17 @@ func (c *LoginCommand) MaxArguments() int {
 // Execute runs the command
 func (c *LoginCommand) Execute(ctx context.Context, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	if len(args) < 1 {
-		_, err := fmt.Fprintf(errorOutputWriter, "usage: login <username>\n")
+		_, err := fmt.Fprintf(errorOutputWriter, "usage: login <username> [password]\n")
 		return err
 	}
 
 	username := args[0]
-	user, err := c.userSVC.LoginUser(username)
+	password := ""
+	if len(args) > 1 {
+		password = args[1]
+	}
+
+	user, err := c.userSVC.LoginUser(username, password)
 	if err != nil {
 		_, err = fmt.Fprintf(errorOutputWriter, "login failed: %v\n", err)
 		return err
@@ -72,5 +77,5 @@ func (c *LoginCommand) Execute(ctx context.Context, args []string, inputReader i
 
 // Help returns the help text
 func (c *LoginCommand) Help() string {
-	return "login <username> - Login as specified user"
+	return "login <username> [password] - Login as specified user. Password is optional."
 }

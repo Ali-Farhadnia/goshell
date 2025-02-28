@@ -33,19 +33,23 @@ func (c *AddUserCommand) MaxArguments() int {
 // Execute runs the command
 func (c *AddUserCommand) Execute(ctx context.Context, args []string, inputReader io.Reader, outputWriter, errorOutputWriter io.Writer) error {
 	if len(args) == 0 {
-		_, err := fmt.Fprintf(errorOutputWriter, "usage: adduser <username>\n")
+		_, err := fmt.Fprintf(errorOutputWriter, "usage: adduser <username> [password]\n")
 		return err
 	}
 
-	// todo: add password
 	username := args[0]
-	user, err := c.userSVC.CreateUser(username)
+	password := ""
+	if len(args) > 1 {
+		password = args[1]
+	}
+
+	_, err := c.userSVC.CreateUser(username, password)
 	if err != nil {
 		_, err = fmt.Fprintf(errorOutputWriter, "error creating user: %v\n", err)
 		return err
 	}
 
-	_, err = fmt.Fprintf(outputWriter, "User added: %s\n", user.Username)
+	_, err = fmt.Fprintf(outputWriter, "User created successfully\n")
 	if err != nil {
 		_, err = fmt.Fprintf(errorOutputWriter, "error writing output: %v\n", err)
 		return err
@@ -56,5 +60,5 @@ func (c *AddUserCommand) Execute(ctx context.Context, args []string, inputReader
 
 // Help returns the help text
 func (c *AddUserCommand) Help() string {
-	return "adduser <username> - Add a new user"
+	return "adduser <username> [password] - Add a new user. Password is optional."
 }
