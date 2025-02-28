@@ -54,7 +54,7 @@ func (s *Service) CreateUser(username string) (*User, error) {
 func (s *Service) LoginUser(username string) (*User, error) {
 	user, err := s.userRepo.FindUserByUsername(username)
 	if err != nil {
-		return nil, fmt.Errorf("user not found: %w", err)
+		return nil, fmt.Errorf("error on finding user: %w", err)
 	}
 
 	// Update last login time
