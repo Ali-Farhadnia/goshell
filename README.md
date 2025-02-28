@@ -2,7 +2,6 @@
 
 A feature-rich, POSIX-compliant shell implementation written in Go.
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/yourusername/goshell)](https://goreportcard.com/report/github.com/yourusername/goshell)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
