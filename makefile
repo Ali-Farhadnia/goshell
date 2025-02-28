@@ -6,17 +6,20 @@ db-up:
 		postgres:16.2
 
 test:
-		go test -coverprofile=coverage.out ./...
+	go test ./...
+	
+test-coverage:
+	go test -coverprofile=coverage.out ./...
 
 coverage: test
-		go tool cover -html=coverage.out -o coverage.html
+	go tool cover -html=coverage.out -o coverage.html
 
 clean-db:
-		docker stop $$(docker ps -q --filter ancestor=postgres:16.2) || true
-		docker rm $$(docker ps -aq --filter ancestor=postgres:16.2) || true
+	docker stop $$(docker ps -q --filter ancestor=postgres:16.2) || true
+	docker rm $$(docker ps -aq --filter ancestor=postgres:16.2) || true
 
 db-login:
-		docker exec -it postgres_container psql -U postgres -d postgres
+	docker exec -it postgres_container psql -U postgres -d postgres
 
 run:
 	go run cmd/shell/main.go
