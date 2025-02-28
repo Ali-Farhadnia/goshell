@@ -48,7 +48,7 @@ func New(cfg *config.Config) (*App, error) {
 	// register commands
 
 	// exit
-	shellSVC.RegisterCommand(commands.NewExitCommand(nil))
+	shellSVC.RegisterCommand(commands.NewExitCommand(nil, nil))
 	// echo
 	shellSVC.RegisterCommand(commands.NewEchoCommand())
 	// cat

@@ -10,12 +10,19 @@ import (
 
 // ExitCommand implements the exit command
 type ExitCommand struct {
-	onExit func(int)
+	onExit   func(int) // Callback for exit
+	exitFunc func(int) // Allows overriding os.Exit
 }
 
 // New creates a new exit command
-func NewExitCommand(onExit func(int)) *ExitCommand {
-	return &ExitCommand{onExit: onExit}
+func NewExitCommand(
+	onExit func(int),
+	exitFunc func(int),
+) *ExitCommand {
+	return &ExitCommand{
+		onExit:   onExit,
+		exitFunc: exitFunc,
+	}
 }
 
 // Name returns the command name
@@ -51,7 +58,11 @@ func (c *ExitCommand) Execute(ctx context.Context, args []string, inputReader io
 		return err
 	}
 
-	os.Exit(exitCode)
+	if c.exitFunc != nil {
+		c.exitFunc(exitCode)
+	} else {
+		os.Exit(exitCode) // Default
+	}
 
 	return nil
 }
