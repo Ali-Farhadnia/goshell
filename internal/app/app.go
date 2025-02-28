@@ -71,6 +71,8 @@ func New(cfg *config.Config) (*App, error) {
 	shellSVC.RegisterCommand(commands.NewHistoryCommand(historySVC, sessionRepo))
 	// help
 	shellSVC.RegisterCommand(commands.NewHelpCommand(cmdRepo))
+	// users
+	shellSVC.RegisterCommand(commands.NewUsersCommand(userSVC))
 
 	// create guest user
 	sessionRepo.SetSession(shell.Session{

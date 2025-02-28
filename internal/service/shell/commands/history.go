@@ -95,7 +95,10 @@ func (c *HistoryCommand) showHistory(userID *int64, limit int, outputWriter, err
 	fmt.Fprintln(w, "Command\tCount")
 	fmt.Fprintln(w, "---\t---")
 
-	for _, stat := range historyStats {
+	for i, stat := range historyStats {
+		if limit != 0 && i == limit {
+			break
+		}
 		_, err = fmt.Fprintf(w, "%s\t%d\n", stat.Command, stat.Count)
 		if err != nil {
 			return err
