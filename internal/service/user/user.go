@@ -41,11 +41,12 @@ func (s *Service) FindUser(username string) (User, error) {
 func (s *Service) CreateUser(username, password string) (User, error) {
 	// Check if user already exists
 	_, err := s.userRepo.FindUserByUsername(username)
-	if err != nil && !errors.Is(err, ErrUserNotFound) {
-		return User{}, err
-	}
 
-	if err == nil {
+	if err != nil {
+		if !errors.Is(err, ErrUserNotFound) {
+			return User{}, err
+		}
+	} else {
 		return User{}, fmt.Errorf("user already exists: %s", username)
 	}
 

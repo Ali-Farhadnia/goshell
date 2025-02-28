@@ -27,8 +27,8 @@ func TestAddUserCommand_Execute(t *testing.T) {
 			name: "success - add user without password",
 			args: []string{"newuser"},
 			setupUserRepo: func(repo *userRepository.UserRepositoryMock) {
-				repo.On("FindUserByUsername", "newuser").Return(nil, nil).Once() // User does not exist
-				repo.On("CreateUser", mock.MatchedBy(func(u *user.User) bool {
+				repo.On("FindUserByUsername", "newuser").Return(nil, user.ErrUserNotFound).Once() // User does not exist
+				repo.On("CreateUser", mock.MatchedBy(func(u user.User) bool {
 					return u.Username == "newuser" && u.PasswordHash == nil
 				})).Return(nil).Once()
 			},
@@ -39,8 +39,8 @@ func TestAddUserCommand_Execute(t *testing.T) {
 			name: "success - add user with password",
 			args: []string{"newuser", "securepassword"},
 			setupUserRepo: func(repo *userRepository.UserRepositoryMock) {
-				repo.On("FindUserByUsername", "newuser").Return(nil, nil).Once() // User does not exist
-				repo.On("CreateUser", mock.MatchedBy(func(u *user.User) bool {
+				repo.On("FindUserByUsername", "newuser").Return(nil, user.ErrUserNotFound).Once() // User does not exist
+				repo.On("CreateUser", mock.MatchedBy(func(u user.User) bool {
 					return u.Username == "newuser" && u.PasswordHash != nil
 				})).Return(nil).Once()
 			},
@@ -58,7 +58,7 @@ func TestAddUserCommand_Execute(t *testing.T) {
 			name: "failure - user already exists",
 			args: []string{"existinguser"},
 			setupUserRepo: func(repo *userRepository.UserRepositoryMock) {
-				repo.On("FindUserByUsername", "existinguser").Return(&user.User{Username: "existinguser"}, nil).Once()
+				repo.On("FindUserByUsername", "existinguser").Return(user.User{Username: "existinguser"}, nil).Once()
 			},
 			expectedOutput: "",
 			expectedError:  "error creating user: user already exists: existinguser\n",
@@ -76,7 +76,7 @@ func TestAddUserCommand_Execute(t *testing.T) {
 			name: "failure - database error on user creation",
 			args: []string{"newuser"},
 			setupUserRepo: func(repo *userRepository.UserRepositoryMock) {
-				repo.On("FindUserByUsername", "newuser").Return(nil, nil).Once()
+				repo.On("FindUserByUsername", "newuser").Return(nil, user.ErrUserNotFound).Once()
 				repo.On("CreateUser", mock.Anything).Return(errors.New("db error")).Once()
 			},
 			expectedOutput: "",
