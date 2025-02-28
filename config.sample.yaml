@@ -1,0 +1,12 @@
+# Shell configuration
+shell:
+  verbose: false
+  historySize: 1000
+  prompt: "%u@%h:%d$ "
+
+# Database configuration
+database:
+  driver: "postgres"
+  dsn: "host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable TimeZone=UTC"
+  autoMigrate: true
+  logLevel: "silent"
