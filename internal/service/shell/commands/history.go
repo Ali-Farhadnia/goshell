@@ -76,26 +76,15 @@ func (c *HistoryCommand) Execute(ctx context.Context, args []string, inputReader
 				return err
 			}
 
-			return c.showHistory(limit, outputWriter, errorOutputWriter)
+			return c.showHistory(userID, limit, outputWriter, errorOutputWriter)
 		}
 	}
 
-	return c.showHistory(0, outputWriter, errorOutputWriter)
+	return c.showHistory(userID, 0, outputWriter, errorOutputWriter)
 }
 
 // showHistory returns command history as a string
-func (c *HistoryCommand) showHistory(limit int, outputWriter, errorOutputWriter io.Writer) error {
-	session, err := c.sessionRepo.GetSession()
-	if err != nil {
-		_, err = fmt.Fprintf(errorOutputWriter, "error getting session: %v\n", err)
-		return err
-	}
-
-	var userID *int64
-	if session.User != nil {
-		userID = &session.User.ID
-	}
-
+func (c *HistoryCommand) showHistory(userID *int64, limit int, outputWriter, errorOutputWriter io.Writer) error {
 	historyStats, err := c.historySVC.GetCommandHistoryStats(userID, limit)
 	if err != nil {
 		_, err = fmt.Fprintf(errorOutputWriter, "error retrieving history: %v\n", err)
